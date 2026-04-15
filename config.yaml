@@ -1,0 +1,33 @@
+app:
+  debug: false
+  name: Bayesian-AGI-Core
+  version: 1.0.0
+
+models:
+  default: "minimax-m2.7:cloud"
+  ollama_url: http://localhost:11434
+  refresh_interval: 300
+
+  providers:
+    ollama:
+      enabled: true
+      models:
+        - deepseek-r1:7b
+        - gemma3:4b
+        - qwen3-vl:4b
+
+    openai:
+      enabled: false
+      api_key: ""
+      models:
+        - gpt-3.5-turbo
+        - gpt-4
+
+server:
+  host: 0.0.0.0
+  port: 8000
+  workers: 4
+
+memory:
+  directory: memory
+  vector_model: "ollama:nomic-embed-text"

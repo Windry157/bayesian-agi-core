@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+requests
+chromadb
+pillow
+pydantic
+python-multipart
+numpy
+psutil
+prometheus-client
+aioprometheus
+httpx
+psycopg2-binary
+pika
+langchain
+transformers

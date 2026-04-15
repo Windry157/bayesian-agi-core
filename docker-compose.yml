@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - llm-service
+      - memory-service
+      - cognition-service
+      - vision-service
+      - multimodal-service
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - LLM_SERVICE_URL=http://llm-service:8001
+      - MEMORY_SERVICE_URL=http://memory-service:8002
+      - COGNITION_SERVICE_URL=http://cognition-service:8003
+      - VISION_SERVICE_URL=http://vision-service:8004
+      - MULTIMODAL_SERVICE_URL=http://multimodal-service:8005
+
+  # LLM Service
+  llm-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.llm-service
+    ports:
+      - "8001:8001"
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - OLLAMA_URL=http://host.docker.internal:11434
+
+  # Memory Service
+  memory-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.memory-service
+    ports:
+      - "8002:8002"
+    depends_on:
+      - rabbitmq
+      - postgres
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MEMORY_DIR=/app/memory
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=bayesian_agi
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./memory:/app/memory
+
+  # Cognition Service
+  cognition-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.cognition-service
+    ports:
+      - "8003:8003"
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+  # Vision Service
+  vision-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.vision-service
+    ports:
+      - "8004:8004"
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+  # Multimodal Service
+  multimodal-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.multimodal-service
+    ports:
+      - "8005:8005"
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=bayesian_agi
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:9.5.2
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+volumes:
+  postgres_data:

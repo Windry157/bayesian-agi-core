@@ -1,0 +1,18 @@
+FROM python:3.14-slim
+
+WORKDIR /app
+
+# 复制依赖文件
+COPY requirements.txt .
+
+# 安装依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制源代码
+COPY src/ /app/src/
+
+# 暴露端口
+EXPOSE 8005
+
+# 启动服务
+CMD ["python", "-m", "src.multimodal_service"]

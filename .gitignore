@@ -1,0 +1,36 @@
+# 环境变量与密钥
+.env
+.env.*
+!.env.example
+
+# Python 缓存与虚拟环境
+__pycache__/
+*.py[cod]
+venv/
+.env/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 模型与数据文件（大文件不提交）
+models/*.bin
+models/*.pth
+models/*.pt
+data/
+memory/
+
+# IDE/编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志与临时文件
+*.log
+logs/
+tmp/
+*.tmp
+
+# Docker/构建
+docker-compose.override.yml
