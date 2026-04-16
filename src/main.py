@@ -8,7 +8,8 @@ import asyncio
 import logging
 import time
 import psutil
-from fastapi import FastAPI, HTTPException, Depends, Request, Response
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Depends, Request, Response, Body
 from fastapi.middleware.cors import CORSMiddleware
 from src.utils.config import load_config
 from src.core.assistant import Assistant
@@ -18,11 +19,42 @@ from src.core.monitoring import monitoring
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# 创建智能助理实例
+assistant = Assistant()
+
+# Lifespan 事件处理器
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期管理"""
+    # 启动事件
+    logger.info("开始启动智能助理...")
+    config = load_config()
+    logger.info(f"加载的配置: {config}")
+    await assistant.initialize(config)
+    
+    # 注册Ollama服务
+    try:
+        from src.core.llm.ollama_service import OllamaLLM
+        ollama_config = config.get("models", {})
+        if ollama_config:
+            llm_service = OllamaLLM(ollama_config)
+            assistant.register_service("llm", llm_service)
+            logger.info("Ollama LLM 服务注册成功")
+        # Fallback to OpenAI
+    except Exception as e:
+        logger.error(f"LLM 服务注册失败: {e}")
+    
+    yield
+    
+    # 关闭事件（如果需要）
+    logger.info("智能助理关闭")
+
 # 创建FastAPI应用
 app = FastAPI(
     title="Bayesian-AGI-Core",
     description="基于自由能原理和主动推理的认知智能体",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # 配置CORS
@@ -55,30 +87,6 @@ app.add_middleware(
 #     
 #     return response
 
-# 创建智能助理实例
-assistant = Assistant()
-
-# 启动事件
-@app.on_event("startup")
-async def startup_event():
-    """启动事件"""
-    logger.info("开始启动智能助理...")
-    config = load_config()
-    logger.info(f"加载的配置: {config}")
-    await assistant.initialize(config)
-    
-    # 注册Ollama服务
-    try:
-        from src.core.llm.ollama_service import OllamaLLM
-        ollama_config = config.get("models", {})
-        if ollama_config:
-            llm_service = OllamaLLM(ollama_config)
-            assistant.register_service("llm", llm_service)
-            logger.info("Ollama LLM 服务注册成功")
-        # Fallback to OpenAI
-    except Exception as e:
-        logger.error(f"LLM 服务注册失败: {e}")
-
 # 健康检查
 @app.get("/health")
 async def health_check():
@@ -95,7 +103,7 @@ async def get_models():
 
 # 添加记忆
 @app.post("/api/memory")
-async def add_memory(content: str, metadata: dict = None):
+async def add_memory(content: str = Body(...), metadata: dict = None):
     """添加记忆"""
     try:
         memory_id = await assistant.add_memory(content, metadata)
@@ -115,7 +123,7 @@ async def search_memory(query: str, top_k: int = 5):
 
 # 决策接口
 @app.post("/api/decision")
-async def make_decision(possible_actions: list):
+async def make_decision(possible_actions: list = Body(...)):
     """做出决策"""
     try:
         decision = assistant.make_decision(possible_actions)
