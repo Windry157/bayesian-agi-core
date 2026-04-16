@@ -10,7 +10,10 @@ import time
 import psutil
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Request, Response, Body
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 from src.utils.config import load_config
 from src.core.assistant import Assistant
 from src.core.monitoring import monitoring
@@ -56,6 +59,16 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# 挂载静态文件目录
+static_dir = Path(__file__).resolve().parent.parent / "static"
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+# 添加 UI 路由
+@app.get("/ui", response_class=FileResponse)
+def ui():
+    """交互界面"""
+    return FileResponse(static_dir / "index.html")
 
 # 配置CORS
 app.add_middleware(

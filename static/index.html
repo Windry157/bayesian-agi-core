@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bayesian-AGI-Core 交互界面</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f3f4f6; margin: 0; padding: 24px; }
+    .container { max-width: 960px; margin: auto; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 10px 24px rgba(0,0,0,0.08); }
+    h1 { margin-top: 0; }
+    .grid { display: grid; gap: 18px; }
+    .card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; background: #fafbff; }
+    .card h2 { margin-top: 0; }
+    button { border: none; padding: 10px 16px; border-radius: 8px; background: #3b82f6; color: white; cursor: pointer; }
+    button:hover { background: #2563eb; }
+    input, textarea, select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+    pre { background: #0f172a; color: #f8fafc; padding: 16px; overflow-x: auto; border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bayesian-AGI-Core 交互界面</h1>
+    <div class="grid">
+      <div class="card">
+        <h2>系统状态</h2>
+        <button onclick="checkHealth()">健康检查</button>
+        <button onclick="loadModels()">获取模型列表</button>
+        <pre id="status-output">等待操作...</pre>
+      </div>
+      <div class="card">
+        <h2>添加记忆</h2>
+        <textarea id="memory-content" rows="4" placeholder="输入记忆内容..."></textarea>
+        <button onclick="addMemory()">提交记忆</button>
+      </div>
+      <div class="card">
+        <h2>记忆检索</h2>
+        <input id="memory-query" type="text" placeholder="输入检索查询..." />
+        <button onclick="searchMemory()">检索</button>
+      </div>
+      <div class="card">
+        <h2>决策生成</h2>
+        <textarea id="decision-actions" rows="3" placeholder="例如：action_1, action_2, action_3"></textarea>
+        <button onclick="makeDecision()">执行决策</button>
+      </div>
+      <div class="card">
+        <h2>接口说明</h2>
+        <p>本页面通过以下 API 交互：</p>
+        <ul>
+          <li><strong>GET</strong> /health</li>
+          <li><strong>GET</strong> /api/models</li>
+          <li><strong>POST</strong> /api/memory</li>
+          <li><strong>GET</strong> /api/memory/search</li>
+          <li><strong>POST</strong> /api/decision</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const statusOutput = document.getElementById('status-output');
+
+    async function apiRequest(url, options = {}) {
+      try {
+        const response = await fetch(url, options);
+        const data = await response.json();
+        return { ok: response.ok, data };
+      } catch (error) {
+        return { ok: false, data: { error: error.message } };
+      }
+    }
+
+    function setOutput(title, payload) {
+      statusOutput.textContent = title + '\n' + JSON.stringify(payload, null, 2);
+    }
+
+    async function checkHealth() {
+      const result = await apiRequest('/health');
+      setOutput('健康检查结果', result.data);
+    }
+
+    async function loadModels() {
+      const result = await apiRequest('/api/models');
+      setOutput('模型列表', result.data);
+    }
+
+    async function addMemory() {
+      const content = document.getElementById('memory-content').value.trim();
+      if (!content) {
+        alert('请先输入记忆内容');
+        return;
+      }
+      const result = await apiRequest('/api/memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      });
+      setOutput('添加记忆', result.data);
+    }
+
+    async function searchMemory() {
+      const query = document.getElementById('memory-query').value.trim();
+      if (!query) {
+        alert('请输入检索内容');
+        return;
+      }
+      const result = await apiRequest(`/api/memory/search?query=${encodeURIComponent(query)}`);
+      setOutput('检索记忆', result.data);
+    }
+
+    async function makeDecision() {
+      const actions = document.getElementById('decision-actions').value.trim();
+      if (!actions) {
+        alert('请输入候选动作列表');
+        return;
+      }
+      const actionList = actions.split(',').map(item => item.trim()).filter(Boolean);
+      const result = await apiRequest('/api/decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(actionList)
+      });
+      setOutput('决策结果', result.data);
+    }
+  </script>
+</body>
+</html>
