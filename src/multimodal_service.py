@@ -14,14 +14,16 @@ from src.core.multimodal.multimodal_processor import BasicMultimodalProcessor
 from src.core.monitoring import monitoring
 
 # 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # 创建FastAPI应用
 app = FastAPI(
     title="Bayesian-AGI-Core Multimodal Service",
     description="Multimodal Service for Bayesian-AGI-Core",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # 配置CORS
@@ -36,11 +38,13 @@ app.add_middleware(
 # 创建多模态处理器
 multimodal_processor = BasicMultimodalProcessor()
 
+
 # 健康检查
 @app.get("/health")
 async def health_check():
     """健康检查"""
     return {"status": "ok", "message": "Multimodal Service is running"}
+
 
 # 处理文本输入
 @app.post("/api/multimodal/text")
@@ -52,6 +56,7 @@ async def process_text(text: str = Form(...), task: str = Form(...)):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process text: {e}")
+
 
 # 处理图像输入
 @app.post("/api/multimodal/image")
@@ -67,6 +72,7 @@ async def process_image(file: UploadFile = File(...), task: str = Form(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process image: {e}")
 
+
 # 处理音频输入
 @app.post("/api/multimodal/audio")
 async def process_audio(file: UploadFile = File(...), task: str = Form(...)):
@@ -81,17 +87,20 @@ async def process_audio(file: UploadFile = File(...), task: str = Form(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process audio: {e}")
 
+
 # 获取支持的输入类型
 @app.get("/api/multimodal/supported-input-types")
 async def get_supported_input_types():
     """获取支持的输入类型"""
     return {"input_types": multimodal_processor.get_supported_input_types()}
 
+
 # 获取支持的任务类型
 @app.get("/api/multimodal/supported-tasks")
 async def get_supported_tasks():
     """获取支持的任务类型"""
     return {"tasks": multimodal_processor.get_supported_tasks()}
+
 
 # 根路径
 @app.get("/")
@@ -100,8 +109,9 @@ async def root():
     return {
         "message": "Welcome to Bayesian-AGI-Core Multimodal Service",
         "version": "1.0.0",
-        "docs": "/docs"
+        "docs": "/docs",
     }
+
 
 # Prometheus指标端点
 @app.get("/health/metrics")
@@ -122,11 +132,8 @@ test_metric 42
         logger.error(f"Metrics error: {e}")
         return f"Error: {str(e)}"
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "src.multimodal_service",
-        host="0.0.0.0",
-        port=8005,
-        reload=True
-    )
+
+    uvicorn.run("src.multimodal_service", host="0.0.0.0", port=8005, reload=True)

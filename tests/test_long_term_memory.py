@@ -1,37 +1,33 @@
 import pytest
 from collections import OrderedDict
-from src.core.memory.long_term_memory import LongTermMemory
+from src.core.memory.memory_system import MemorySystem
 
 
-class DummyLongTermMemory(LongTermMemory):
+class DummyMemorySystem(MemorySystem):
     def __init__(self):
-        # 避免真实数据库连接
-        self.host = "localhost"
-        self.port = 5432
-        self.database = "bayesian_agi"
-        self.user = "postgres"
-        self.password = "postgres"
-        self.min_connections = 1
-        self.max_connections = 1
-        self.connection_pool = None
+        # 避免真实文件操作
+        super().__init__(memory_dir="./test_memory")
         self.cache = OrderedDict()
         self.cache_size = 3
 
-    def _create_connection_pool(self):
-        return None
-
-    def _create_tables(self):
-        return None
-
-    def _get_connection(self):
-        return None
-
-    def _put_connection(self, conn):
-        return None
+    def _update_cache(self, key, content):
+        """更新缓存"""
+        if key in self.cache:
+            # 更新现有键
+            self.cache[key] = content
+            # 移动到末尾表示最近使用
+            self.cache.move_to_end(key)
+        else:
+            # 添加新键
+            self.cache[key] = content
+            # 如果超过缓存大小，删除最旧的
+            if len(self.cache) > self.cache_size:
+                oldest_key = next(iter(self.cache))
+                del self.cache[oldest_key]
 
 
 def test_update_cache_evicts_least_recently_used():
-    memory = DummyLongTermMemory()
+    memory = DummyMemorySystem()
 
     memory._update_cache("a", "content_a")
     memory._update_cache("b", "content_b")
@@ -49,7 +45,7 @@ def test_update_cache_evicts_least_recently_used():
 
 
 def test_update_cache_updates_existing_key_without_evicting():
-    memory = DummyLongTermMemory()
+    memory = DummyMemorySystem()
     memory._update_cache("a", "content_a")
     memory._update_cache("b", "content_b")
     memory._update_cache("c", "content_c")

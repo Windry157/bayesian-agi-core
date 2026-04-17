@@ -18,14 +18,16 @@ from src.utils.message_queue import message_queue_manager
 from src.core.monitoring import monitoring
 
 # 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # 创建FastAPI应用
 app = FastAPI(
     title="Bayesian-AGI-Core Memory Service",
     description="Memory Service for Bayesian-AGI-Core",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # 配置CORS
@@ -37,13 +39,16 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
+
 # 定义请求模型
 class MemoryRequest(BaseModel):
     content: str
     metadata: Optional[Dict] = None
 
+
 # 创建智能助理实例
 assistant = Assistant()
+
 
 # 消息处理函数
 def handle_memory_message(message):
@@ -67,6 +72,7 @@ def handle_memory_message(message):
     except Exception as e:
         logger.error(f"处理消息失败: {e}")
 
+
 # 启动事件
 @app.on_event("startup")
 async def startup_event():
@@ -75,7 +81,7 @@ async def startup_event():
     config = load_config()
     # 初始化智能助理
     await assistant.initialize(config)
-    
+
     # 初始化消息队列
     try:
         message_queue_manager.connect()
@@ -86,8 +92,9 @@ async def startup_event():
         logger.info("消息队列初始化成功")
     except Exception as e:
         logger.warning(f"消息队列初始化失败: {e}")
-    
+
     logger.info("Memory服务启动成功")
+
 
 # 健康检查
 @app.get("/health")
@@ -95,18 +102,19 @@ async def health_check():
     """健康检查"""
     return {"status": "ok", "message": "Memory Service is running"}
 
+
 # 添加记忆
 @app.post("/api/memory")
 async def add_memory(req: MemoryRequest):
     """添加记忆"""
     try:
         memory_id = await assistant.add_memory(
-            content=req.content,
-            metadata=req.metadata  # 已在下层清理空字典
+            content=req.content, metadata=req.metadata  # 已在下层清理空字典
         )
         return {"id": memory_id, "message": "Memory added successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add memory: {e}")
+
 
 # 检索记忆
 @app.get("/api/memory/search")
@@ -118,6 +126,7 @@ async def search_memory(query: str, top_k: int = 5):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to search memory: {e}")
 
+
 # 根路径
 @app.get("/")
 async def root():
@@ -125,8 +134,9 @@ async def root():
     return {
         "message": "Welcome to Bayesian-AGI-Core Memory Service",
         "version": "1.0.0",
-        "docs": "/docs"
+        "docs": "/docs",
     }
+
 
 # Prometheus指标端点
 @app.get("/health/metrics")
@@ -147,11 +157,8 @@ test_metric 42
         logger.error(f"Metrics error: {e}")
         return f"Error: {str(e)}"
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "src.memory_service:app",
-        host="0.0.0.0",
-        port=8002,
-        reload=True
-    )
+
+    uvicorn.run("src.memory_service:app", host="0.0.0.0", port=8002, reload=True)

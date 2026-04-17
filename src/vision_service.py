@@ -14,14 +14,16 @@ import numpy as np
 from src.core.monitoring import monitoring
 
 # 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # 创建FastAPI应用
 app = FastAPI(
     title="Bayesian-AGI-Core Vision Service",
     description="Vision Service for Bayesian-AGI-Core",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # 配置CORS
@@ -33,11 +35,13 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
+
 # 健康检查
 @app.get("/health")
 async def health_check():
     """健康检查"""
     return {"status": "ok", "message": "Vision Service is running"}
+
 
 # 图像分类
 @app.post("/api/vision/classify")
@@ -55,6 +59,7 @@ async def classify_image(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to classify image: {e}")
 
+
 # 目标检测
 @app.post("/api/vision/detect")
 async def detect_objects(file: UploadFile = File(...)):
@@ -66,12 +71,13 @@ async def detect_objects(file: UploadFile = File(...)):
         # 实际应用中，这里应该使用真实的视觉模型进行目标检测
         objects = [
             {"class": "person", "confidence": 0.98, "bbox": [100, 100, 200, 300]},
-            {"class": "car", "confidence": 0.92, "bbox": [300, 200, 500, 350]}
+            {"class": "car", "confidence": 0.92, "bbox": [300, 200, 500, 350]},
         ]
         logger.info(f"目标检测结果: {objects}")
         return {"objects": objects}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to detect objects: {e}")
+
 
 # 图像描述
 @app.post("/api/vision/describe")
@@ -88,6 +94,7 @@ async def describe_image(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to describe image: {e}")
 
+
 # 根路径
 @app.get("/")
 async def root():
@@ -95,8 +102,9 @@ async def root():
     return {
         "message": "Welcome to Bayesian-AGI-Core Vision Service",
         "version": "1.0.0",
-        "docs": "/docs"
+        "docs": "/docs",
     }
+
 
 # Prometheus指标端点
 @app.get("/health/metrics")
@@ -117,11 +125,8 @@ test_metric 42
         logger.error(f"Metrics error: {e}")
         return f"Error: {str(e)}"
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "src.vision_service",
-        host="0.0.0.0",
-        port=8004,
-        reload=True
-    )
+
+    uvicorn.run("src.vision_service", host="0.0.0.0", port=8004, reload=True)

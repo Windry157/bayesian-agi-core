@@ -14,14 +14,16 @@ from src.core.assistant import Assistant
 from src.core.monitoring import monitoring
 
 # 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # 创建FastAPI应用
 app = FastAPI(
     title="Bayesian-AGI-Core LLM Service",
     description="LLM Service for Bayesian-AGI-Core",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # 配置CORS
@@ -36,6 +38,7 @@ app.add_middleware(
 # 创建智能助理实例
 assistant = Assistant()
 
+
 # 启动事件
 @app.on_event("startup")
 async def startup_event():
@@ -46,11 +49,13 @@ async def startup_event():
     await assistant.initialize(config)
     logger.info("LLM服务启动成功")
 
+
 # 健康检查
 @app.get("/health")
 async def health_check():
     """健康检查"""
     return {"status": "ok", "message": "LLM Service is running"}
+
 
 # 获取模型列表
 @app.get("/api/models")
@@ -60,6 +65,7 @@ async def get_models():
     logger.info(f"返回的模型列表: {models}")
     return {"models": models}
 
+
 # 根路径
 @app.get("/")
 async def root():
@@ -67,8 +73,9 @@ async def root():
     return {
         "message": "Welcome to Bayesian-AGI-Core LLM Service",
         "version": "1.0.0",
-        "docs": "/docs"
+        "docs": "/docs",
     }
+
 
 # Prometheus指标端点
 @app.get("/health/metrics")
@@ -89,11 +96,8 @@ test_metric 42
         logger.error(f"Metrics error: {e}")
         return f"Error: {str(e)}"
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "src.llm_service",
-        host="0.0.0.0",
-        port=8001,
-        reload=True
-    )
+
+    uvicorn.run("src.llm_service", host="0.0.0.0", port=8001, reload=True)
