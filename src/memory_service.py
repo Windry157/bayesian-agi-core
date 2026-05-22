@@ -5,7 +5,6 @@ Memory Service
 处理与记忆相关的请求
 """
 
-import os
 import logging
 import asyncio
 from fastapi import FastAPI, HTTPException
@@ -15,7 +14,6 @@ from typing import Optional, Dict
 from src.utils.config import load_config
 from src.core.assistant import Assistant
 from src.utils.message_queue import message_queue_manager
-from src.core.monitoring import monitoring
 
 # 配置日志
 logging.basicConfig(
@@ -88,7 +86,8 @@ async def startup_event():
         # 订阅记忆相关的消息
         message_queue_manager.subscribe("memory_queue", handle_memory_message)
         # 启动消息消费
-        asyncio.create_task(asyncio.to_thread(message_queue_manager.start_consuming))
+        asyncio.create_task(asyncio.to_thread(
+            message_queue_manager.start_consuming))
         logger.info("消息队列初始化成功")
     except Exception as e:
         logger.warning(f"消息队列初始化失败: {e}")
@@ -113,7 +112,8 @@ async def add_memory(req: MemoryRequest):
         )
         return {"id": memory_id, "message": "Memory added successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to add memory: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to add memory: {e}")
 
 
 # 检索记忆
@@ -124,7 +124,8 @@ async def search_memory(query: str, top_k: int = 5):
         memories = await assistant.retrieve_memories(query, top_k)
         return {"memories": memories}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to search memory: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to search memory: {e}")
 
 
 # 根路径
@@ -161,4 +162,5 @@ test_metric 42
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("src.memory_service:app", host="0.0.0.0", port=8002, reload=True)
+    uvicorn.run("src.memory_service:app",
+                host="0.0.0.0", port=8002, reload=True)

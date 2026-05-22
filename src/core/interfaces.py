@@ -18,7 +18,6 @@ class IBayesianBrain(ABC):
         Args:
             new_evidence: 新的证据，键为状态，值为概率
         """
-        pass
 
     @abstractmethod
     def bayesian_update(self, observation: Dict) -> Dict[str, float]:
@@ -30,7 +29,6 @@ class IBayesianBrain(ABC):
         Returns:
             更新后的后验概率
         """
-        pass
 
     @abstractmethod
     def active_inference(self, possible_actions: List[str]) -> str:
@@ -42,7 +40,6 @@ class IBayesianBrain(ABC):
         Returns:
             选择的行动
         """
-        pass
 
     @abstractmethod
     def get_beliefs(self) -> Dict[str, float]:
@@ -51,12 +48,10 @@ class IBayesianBrain(ABC):
         Returns:
             当前世界模型的概率分布
         """
-        pass
 
     @abstractmethod
     def reset(self):
         """重置贝叶斯大脑"""
-        pass
 
 
 class IMemorySystem(ABC):
@@ -75,7 +70,6 @@ class IMemorySystem(ABC):
         Returns:
             记忆ID
         """
-        pass
 
     @abstractmethod
     async def retrieve_memories(
@@ -90,7 +84,6 @@ class IMemorySystem(ABC):
         Returns:
             检索到的记忆列表
         """
-        pass
 
     @abstractmethod
     async def get_knowledge_graph(self) -> Dict[str, Any]:
@@ -99,10 +92,10 @@ class IMemorySystem(ABC):
         Returns:
             知识图谱数据
         """
-        pass
 
     @abstractmethod
-    async def add_entity(self, entity_id: str, properties: Dict[str, Any]) -> bool:
+    async def add_entity(self, entity_id: str,
+                         properties: Dict[str, Any]) -> bool:
         """添加实体
 
         Args:
@@ -112,7 +105,6 @@ class IMemorySystem(ABC):
         Returns:
             是否添加成功
         """
-        pass
 
     @abstractmethod
     async def add_relation(
@@ -133,17 +125,14 @@ class IMemorySystem(ABC):
         Returns:
             是否添加成功
         """
-        pass
 
     @abstractmethod
     async def save(self):
         """保存记忆系统"""
-        pass
 
     @abstractmethod
     async def load(self):
         """加载记忆系统"""
-        pass
 
 
 class ILLMService(ABC):
@@ -162,7 +151,6 @@ class ILLMService(ABC):
         Returns:
             流式生成的响应
         """
-        pass
 
     @abstractmethod
     async def get_available_models(self) -> List[Dict[str, Any]]:
@@ -171,7 +159,6 @@ class ILLMService(ABC):
         Returns:
             模型列表
         """
-        pass
 
     @abstractmethod
     def get_available_models_sync(self) -> List[Dict[str, Any]]:
@@ -180,7 +167,6 @@ class ILLMService(ABC):
         Returns:
             模型列表
         """
-        pass
 
 
 class IModelManager(ABC):
@@ -193,7 +179,6 @@ class IModelManager(ABC):
         Args:
             config: 配置
         """
-        pass
 
     @abstractmethod
     def get_models(self) -> List[Dict[str, Any]]:
@@ -202,7 +187,6 @@ class IModelManager(ABC):
         Returns:
             模型列表
         """
-        pass
 
 
 class IAssistant(ABC):
@@ -215,7 +199,6 @@ class IAssistant(ABC):
         Args:
             config: 配置
         """
-        pass
 
     @abstractmethod
     def register_service(self, name: str, service: Any):
@@ -225,7 +208,6 @@ class IAssistant(ABC):
             name: 服务名称
             service: 服务实例
         """
-        pass
 
     @abstractmethod
     def get_service(self, name: str) -> Optional[Any]:
@@ -237,7 +219,6 @@ class IAssistant(ABC):
         Returns:
             服务实例，如果不存在返回None
         """
-        pass
 
     @abstractmethod
     def get_models(self) -> List[Dict[str, Any]]:
@@ -246,7 +227,6 @@ class IAssistant(ABC):
         Returns:
             模型列表
         """
-        pass
 
     @abstractmethod
     async def add_memory(
@@ -261,7 +241,6 @@ class IAssistant(ABC):
         Returns:
             记忆ID
         """
-        pass
 
     @abstractmethod
     async def retrieve_memories(
@@ -276,7 +255,6 @@ class IAssistant(ABC):
         Returns:
             检索到的记忆列表
         """
-        pass
 
     @abstractmethod
     def update_beliefs(self, evidence: Dict[str, float]):
@@ -285,7 +263,6 @@ class IAssistant(ABC):
         Args:
             evidence: 证据
         """
-        pass
 
     @abstractmethod
     def make_decision(self, possible_actions: List[str]) -> str:
@@ -297,4 +274,3 @@ class IAssistant(ABC):
         Returns:
             选择的行动
         """
-        pass

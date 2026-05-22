@@ -1,8 +1,5 @@
-import tempfile
 from pathlib import Path
 
-import pytest
-from fastapi.testclient import TestClient
 
 from src.main import app
 from src.core.assistant import Assistant, ModelManager
@@ -47,7 +44,8 @@ server:
 
 
 def test_model_manager_loads_ollama_models(monkeypatch):
-    monkeypatch.setattr("src.core.assistant.OllamaLLM", lambda *args, **kwargs: DummyOllama())
+    monkeypatch.setattr("src.core.assistant.OllamaLLM",
+                        lambda *args, **kwargs: DummyOllama())
 
     config = {
         "models": {
@@ -82,7 +80,8 @@ def test_assistant_register_and_get_service():
 
 
 def test_root_route_is_registered():
-    root_routes = [route for route in app.routes if getattr(route, "path", None) == "/" and "GET" in getattr(route, "methods", [])]
+    root_routes = [route for route in app.routes if getattr(
+        route, "path", None) == "/" and "GET" in getattr(route, "methods", [])]
 
     assert len(root_routes) == 1
     assert root_routes[0].name == "root"

@@ -5,13 +5,11 @@ LLM Service
 处理与LLM相关的请求
 """
 
-import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.utils.config import load_config
 from src.core.assistant import Assistant
-from src.core.monitoring import monitoring
 
 # 配置日志
 logging.basicConfig(

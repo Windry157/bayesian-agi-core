@@ -5,7 +5,7 @@
 实现思维链推理功能
 """
 
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 
 class ChainOfThought:
@@ -221,12 +221,13 @@ class ChainOfThought:
             chain: 思维链
         """
         self.chain_history.append(
-            {"problem": problem, "chain": chain, "timestamp": self._get_timestamp()}
+            {"problem": problem, "chain": chain,
+                "timestamp": self._get_timestamp()}
         )
 
         # 限制思维链历史的大小
         if len(self.chain_history) > self.max_chain_length:
-            self.chain_history = self.chain_history[-self.max_chain_length :]
+            self.chain_history = self.chain_history[-self.max_chain_length:]
 
     def _get_timestamp(self) -> float:
         """获取当前时间戳

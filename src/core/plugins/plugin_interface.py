@@ -6,7 +6,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 
 
 class PluginInterface(ABC):
@@ -22,7 +22,6 @@ class PluginInterface(ABC):
         Returns:
             插件名称
         """
-        pass
 
     @abstractmethod
     def get_version(self) -> str:
@@ -31,7 +30,6 @@ class PluginInterface(ABC):
         Returns:
             插件版本
         """
-        pass
 
     @abstractmethod
     def get_description(self) -> str:
@@ -40,7 +38,6 @@ class PluginInterface(ABC):
         Returns:
             插件描述
         """
-        pass
 
     @abstractmethod
     def initialize(self, config: Dict[str, Any]) -> bool:
@@ -52,7 +49,6 @@ class PluginInterface(ABC):
         Returns:
             是否初始化成功
         """
-        pass
 
     @abstractmethod
     def process(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -64,7 +60,6 @@ class PluginInterface(ABC):
         Returns:
             处理结果
         """
-        pass
 
     @abstractmethod
     def shutdown(self) -> bool:
@@ -73,4 +68,3 @@ class PluginInterface(ABC):
         Returns:
             是否关闭成功
         """
-        pass

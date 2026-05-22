@@ -20,7 +20,8 @@ class HttpClientManager:
         self.clients: Dict[str, httpx.AsyncClient] = {}
         self.sync_clients: Dict[str, httpx.Client] = {}
 
-    async def get_client(self, base_url: Optional[str] = None) -> httpx.AsyncClient:
+    async def get_client(
+        self, base_url: Optional[str] = None) -> httpx.AsyncClient:
         """获取异步HTTP客户端
 
         Args:

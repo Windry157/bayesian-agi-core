@@ -6,7 +6,7 @@
 """
 
 import time
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 
 class System2:
@@ -47,7 +47,8 @@ class System2:
 
         # 使用贝叶斯大脑进行决策
         if possible_actions:
-            best_action = self.bayesian_brain.active_inference(possible_actions)
+            best_action = self.bayesian_brain.active_inference(
+                possible_actions)
         else:
             best_action = "no_action"
 
@@ -57,7 +58,8 @@ class System2:
         )
 
         # 评估决策
-        evaluation = self._evaluate_decision(situation, best_action, reasoning_chain)
+        evaluation = self._evaluate_decision(
+            situation, best_action, reasoning_chain)
 
         decision_time = time.time() - start_time
 
@@ -107,7 +109,8 @@ class System2:
 
         return states
 
-    def _generate_possible_actions(self, situation: Dict[str, Any]) -> List[str]:
+    def _generate_possible_actions(
+        self, situation: Dict[str, Any]) -> List[str]:
         """生成可能的行动
 
         Args:

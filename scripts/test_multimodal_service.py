@@ -8,6 +8,8 @@ import requests
 import os
 
 # 测试处理文本输入
+
+
 def test_process_text():
     url = "http://localhost:8005/api/multimodal/text"
     data = {
@@ -20,6 +22,8 @@ def test_process_text():
     assert response.status_code == 200
 
 # 测试处理图像输入
+
+
 def test_process_image():
     url = "http://localhost:8005/api/multimodal/image"
     # 使用一个简单的测试图像
@@ -37,6 +41,8 @@ def test_process_image():
         print(f"测试图像 {test_image_path} 不存在，跳过图像处理测试")
 
 # 测试处理音频输入
+
+
 def test_process_audio():
     url = "http://localhost:8005/api/multimodal/audio"
     # 使用一个简单的测试音频
@@ -54,6 +60,8 @@ def test_process_audio():
         print(f"测试音频 {test_audio_path} 不存在，跳过音频处理测试")
 
 # 测试获取支持的输入类型
+
+
 def test_get_supported_input_types():
     url = "http://localhost:8005/api/multimodal/supported-input-types"
     response = requests.get(url)
@@ -62,6 +70,8 @@ def test_get_supported_input_types():
     assert response.status_code == 200
 
 # 测试获取支持的任务类型
+
+
 def test_get_supported_tasks():
     url = "http://localhost:8005/api/multimodal/supported-tasks"
     response = requests.get(url)
@@ -70,6 +80,8 @@ def test_get_supported_tasks():
     assert response.status_code == 200
 
 # 测试健康检查
+
+
 def test_health_check():
     url = "http://localhost:8005/health"
     response = requests.get(url)
@@ -78,12 +90,15 @@ def test_health_check():
     assert response.status_code == 200
 
 # 测试监控端点
+
+
 def test_metrics():
     url = "http://localhost:8005/health/metrics"
     response = requests.get(url)
     print("监控端点 - Status code:", response.status_code)
     print("监控端点 - Response:", response.text)
     assert response.status_code == 200
+
 
 if __name__ == "__main__":
     print("测试多模态服务...")

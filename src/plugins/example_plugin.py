@@ -5,7 +5,7 @@
 """
 
 from src.core.plugins import PluginInterface
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 
 
 class ExamplePlugin(PluginInterface):

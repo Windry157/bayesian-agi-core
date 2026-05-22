@@ -5,7 +5,6 @@
 """
 
 import requests
-import json
 
 # 测试添加记忆
 url = "http://localhost:8000/api/memory"

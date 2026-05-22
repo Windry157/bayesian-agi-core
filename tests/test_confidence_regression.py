@@ -6,9 +6,6 @@
 """
 
 import pytest
-import asyncio
-from typing import Dict, List, Any
-from datetime import datetime
 
 
 class TestConfidenceScorer:
@@ -40,7 +37,8 @@ class TestConfidenceScorer:
         assert "confidence_score" in result
         assert 0 <= result["confidence_score"] <= 1
         assert "confidence_level" in result
-        assert result["confidence_level"] in ["high", "medium", "low", "very_low", "unknown"]
+        assert result["confidence_level"] in [
+            "high", "medium", "low", "very_low", "unknown"]
         assert "factor_scores" in result
 
     @pytest.mark.asyncio
@@ -59,7 +57,8 @@ class TestConfidenceScorer:
         )
 
         assert 0 <= result["confidence_score"] <= 1
-        assert result["confidence_level"] in ["high", "medium", "low", "very_low", "unknown"]
+        assert result["confidence_level"] in [
+            "high", "medium", "low", "very_low", "unknown"]
 
     @pytest.mark.asyncio
     async def test_text_generation_confidence_basic(self, scorer):
@@ -119,7 +118,8 @@ class TestConfidenceScorer:
         score = scorer._calculate_memory_match_score(low_similarity_memories)
         assert 0.1 <= score <= 0.5
 
-        high_similarity_memories = [{"similarity": 0.9}, {"similarity": 0.85}, {"similarity": 0.88}]
+        high_similarity_memories = [{"similarity": 0.9}, {
+            "similarity": 0.85}, {"similarity": 0.88}]
         score = scorer._calculate_memory_match_score(high_similarity_memories)
         assert 0.7 <= score <= 0.95
 
@@ -152,11 +152,13 @@ class TestConfidenceScorer:
     def test_prompt_relevance_calculation(self, scorer):
         """测试提示相关性计算"""
         relevant_text = "artificial intelligence machine learning"
-        score = scorer._calculate_prompt_relevance("artificial intelligence", relevant_text)
+        score = scorer._calculate_prompt_relevance(
+            "artificial intelligence", relevant_text)
         assert score > 0.3
 
         irrelevant_text = "today weather is good"
-        score = scorer._calculate_prompt_relevance("artificial intelligence", irrelevant_text)
+        score = scorer._calculate_prompt_relevance(
+            "artificial intelligence", irrelevant_text)
         assert score < 0.3
 
 
@@ -475,7 +477,9 @@ class TestConfidenceIntegration:
 
             min_exp, max_exp = case["expected_confidence_range"]
             assert min_exp <= result["confidence_score"] <= max_exp, \
-                f"Case '{case['name']}' failed: {result['confidence_score']} not in range"
+                f"Case '{
+    case['name']}' failed: {
+        result['confidence_score']} not in range"
 
 
 class TestConfidenceThresholds:
@@ -526,7 +530,8 @@ class TestUncertaintyAnalysis:
         from src.core.uncertainty.confidence_scorer import confidence_scorer
 
         result = await confidence_scorer.score_decision_confidence(
-            decision_context={"input": "测试", "thought_chain": [], "context": {}},
+            decision_context={"input": "测试",
+                              "thought_chain": [], "context": {}},
             relevant_memories=[],
             knowledge_coverage=0.1
         )

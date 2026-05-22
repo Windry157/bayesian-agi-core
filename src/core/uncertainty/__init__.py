@@ -11,9 +11,9 @@ from .response_wrapper import ResponseWrapper, response_wrapper
 from .feedback_collector import FeedbackCollector, feedback_collector
 from .confidence_visualizer import ConfidenceVisualizer, ConfidenceFormatter, confidence_visualizer
 from .confidence_cache import (
-    ConfidenceCache, 
-    AsyncConfidenceProcessor, 
-    ConfidenceCacheManager, 
+    ConfidenceCache,
+    AsyncConfidenceProcessor,
+    ConfidenceCacheManager,
     confidence_cache_manager
 )
 from .confidence_logger import (

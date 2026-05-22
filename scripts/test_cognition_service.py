@@ -5,9 +5,10 @@
 """
 
 import requests
-import json
 
 # 测试做出决策
+
+
 def test_make_decision():
     url = "http://localhost:8003/api/decision"
     data = {
@@ -22,6 +23,8 @@ def test_make_decision():
     assert response.status_code == 200
 
 # 测试健康检查
+
+
 def test_health_check():
     url = "http://localhost:8003/health"
     response = requests.get(url)
@@ -30,12 +33,15 @@ def test_health_check():
     assert response.status_code == 200
 
 # 测试监控端点
+
+
 def test_metrics():
     url = "http://localhost:8003/health/metrics"
     response = requests.get(url)
     print("监控端点 - Status code:", response.status_code)
     print("监控端点 - Response:", response.text)
     assert response.status_code == 200
+
 
 if __name__ == "__main__":
     print("测试认知服务...")

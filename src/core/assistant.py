@@ -12,13 +12,13 @@ from .cognition.bayesian_brain import BayesianBrain
 from .cognition.cognition_coordinator import CognitionCoordinator
 from .cognition.system2 import System2
 from .memory.memory_system import MemorySystem
-from .memory.context_bridge import ContextBridge, context_bridge
-from .memory.state_persistence import StatePersistence, state_persistence
+from .memory.context_bridge import context_bridge
+from .memory.state_persistence import state_persistence
 from .llm.ollama_service import OllamaLLM
 from .learning.learning_manager import LearningManager
-from .learning.meta_learning import MetaLearningArchitecture, meta_learning_architecture
-from .learning.intrinsic_motivation import IntrinsicMotivationSystem, intrinsic_motivation_system
-from .safety.constraint_enforcement import ConstraintEnforcementModule, constraint_enforcement
+from .learning.meta_learning import meta_learning_architecture
+from .learning.intrinsic_motivation import intrinsic_motivation_system
+from .safety.constraint_enforcement import constraint_enforcement
 
 
 class ModelManager(IModelManager):
@@ -112,18 +112,18 @@ class Assistant(IAssistant):
 
         self.memory_system = MemorySystem()
         self.learning_manager = LearningManager()
-        
+
         # 新增：持续上下文和认知状态
         self.context_bridge = context_bridge
         self.state_persistence = state_persistence
-        
+
         # 新增：元学习和内在动机系统
         self.meta_learning = meta_learning_architecture
         self.intrinsic_motivation = intrinsic_motivation_system
-        
+
         # 新增：约束执行模块
         self.constraint_enforcement = constraint_enforcement
-        
+
         # 服务和会话管理
         self.services: Dict[str, Any] = {}
         self.active_sessions: Dict[str, Dict[str, Any]] = {}
@@ -140,7 +140,8 @@ class Assistant(IAssistant):
         # 加载记忆系统配置
         memory_config = config.get("memory", {})
         memory_dir = memory_config.get("directory", "memory")
-        vector_model = memory_config.get("vector_model", "ollama:nomic-embed-text")
+        vector_model = memory_config.get(
+            "vector_model", "ollama:nomic-embed-text")
         ollama_url = config.get("models", {}).get(
             "ollama_url", "http://localhost:11434"
         )
@@ -257,51 +258,53 @@ class Assistant(IAssistant):
             rate: 学习率，范围0到1
         """
         self.learning_manager.set_learning_rate(rate)
-    
-    async def process_with_context(self, input_text: str, session_id: str) -> Dict[str, Any]:
+
+    async def process_with_context(
+        self, input_text: str, session_id: str) -> Dict[str, Any]:
         """基于完整历史上下文处理
-        
+
         Args:
             input_text: 输入文本
             session_id: 会话ID
-            
+
         Returns:
             处理结果
         """
         try:
             # 1. 加载相关历史上下文
             context = await self.context_bridge.load_relevant_context(session_id, input_text)
-            
+
             # 2. 加载认知状态
             cognitive_state = await self.state_persistence.load_cognitive_state()
-            
+
             # 3. 增强推理
             response = await self._enhanced_reasoning(input_text, context, cognitive_state)
-            
+
             # 4. 约束执行检查
             constraint_result = self.constraint_enforcement.check_constraints(
                 input_text, response.get("response", "")
             )
-            
+
             if not constraint_result["passed"]:
                 # 使用约束执行模块提供的替代响应
                 response["response"] = constraint_result["alternative_response"]
                 response["constraint_enforced"] = True
                 response["constraint_reason"] = constraint_result["reason"]
-            
+
             # 5. 更新会话上下文
             session_context = {
                 "messages": [
                     {"role": "user", "content": input_text, "timestamp": "now"},
-                    {"role": "assistant", "content": response.get("response", ""), "timestamp": "now"}
+                    {"role": "assistant", "content": response.get(
+                        "response", ""), "timestamp": "now"}
                 ],
                 "metadata": {"last_input": input_text}
             }
             await self.context_bridge.update_session_context(session_id, session_context)
-            
+
             # 6. 更新认知状态
             await self.state_persistence.update_state(response)
-            
+
             # 7. 记录经验
             experience = {
                 "input": input_text,
@@ -311,88 +314,90 @@ class Assistant(IAssistant):
                 "timestamp": "now"
             }
             await self.learn_from_experience(experience)
-            
+
             return response
-            
+
         except Exception as e:
             logging.error(f"处理上下文失败: {e}")
             return {"error": str(e)}
-    
-    async def _enhanced_reasoning(self, input_text: str, context: Dict[str, Any], cognitive_state: Dict[str, Any]) -> Dict[str, Any]:
+
+    async def _enhanced_reasoning(
+        self, input_text: str, context: Dict[str, Any], cognitive_state: Dict[str, Any]) -> Dict[str, Any]:
         """增强推理
-        
+
         Args:
             input_text: 输入文本
             context: 上下文信息
             cognitive_state: 认知状态
-            
+
         Returns:
             推理结果
         """
         # 简化实现，实际应该使用更复杂的推理逻辑
         response_text = f"基于上下文的回答: {input_text}"
-        
+
         # 模拟推理结果
         return {
             "response": response_text,
             "context_used": True,
             "cognitive_state_updated": True
         }
-    
+
     async def self_improvement_cycle(self) -> Dict[str, Any]:
         """自我完善循环
-        
+
         Returns:
             改进结果
         """
         try:
             # 调用元学习架构的自我完善循环
             result = await self.meta_learning.self_improvement_cycle()
-            
+
             logging.info("自我完善循环完成")
             return result
-            
+
         except Exception as e:
             logging.error(f"自我完善循环失败: {e}")
             return {"error": str(e)}
-    
+
     async def generate_learning_goals(self) -> List[Dict[str, Any]]:
         """生成学习目标
-        
+
         Returns:
             学习目标列表
         """
         try:
             # 调用内在动机系统生成学习目标
             goals = await self.intrinsic_motivation.generate_learning_goals()
-            
+
             # 转换为字典格式
             goal_dicts = [goal.to_dict() for goal in goals]
-            
+
             logging.info(f"生成学习目标完成: {len(goal_dicts)} 个目标")
             return goal_dicts
-            
+
         except Exception as e:
             logging.error(f"生成学习目标失败: {e}")
             return []
-    
+
     async def start_autonomous_learning(self):
         """启动自主学习
         """
         try:
             # 启动内在动机系统的自主学习循环
-            asyncio.create_task(self.intrinsic_motivation.autonomous_learning_loop())
-            
+            asyncio.create_task(
+                self.intrinsic_motivation.autonomous_learning_loop())
+
             logging.info("自主学习启动成功")
             return True
-            
+
         except Exception as e:
             logging.error(f"启动自主学习失败: {e}")
             return False
-    
+
     def get_system_health(self) -> Dict[str, Any]:
         """获取系统健康状态
-        
+
         Returns:
             系统健康状态
         """
@@ -404,10 +409,10 @@ class Assistant(IAssistant):
                 "session_count": len(self.context_bridge.get_session_contexts())
             }
         }
-    
+
     def clear_session(self, session_id: str):
         """清除会话
-        
+
         Args:
             session_id: 会话ID
         """
@@ -415,10 +420,10 @@ class Assistant(IAssistant):
         if session_id in self.active_sessions:
             del self.active_sessions[session_id]
         logging.info(f"清除会话 {session_id}")
-    
+
     def get_active_sessions(self) -> Dict[str, Dict[str, Any]]:
         """获取活跃会话
-        
+
         Returns:
             活跃会话
         """

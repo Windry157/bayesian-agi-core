@@ -6,8 +6,7 @@
 """
 
 import logging
-from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime
+from typing import Dict, List, Any
 
 # 配置日志
 logging.basicConfig(
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ConfidenceVisualizer:
     """置信度可视化器
-    
+
     将置信度分数转换为用户友好的展示格式
     支持多种可视化级别和交互建议
     """
@@ -102,14 +101,14 @@ class ConfidenceVisualizer:
         response_text: str = None
     ) -> Dict[str, Any]:
         """生成置信度可视化数据
-        
+
         Args:
             confidence_score: 置信度分数 (0-1)
             confidence_level: 置信度级别
             confidence_details: 置信度详情
             input_text: 输入文本
             response_text: 响应文本
-            
+
         Returns:
             可视化数据
         """
@@ -136,16 +135,20 @@ class ConfidenceVisualizer:
             }
 
             if self.display_settings["show_confidence_range"]:
-                visualization["confidence_range"] = self._calculate_confidence_range(confidence_score)
+                visualization["confidence_range"] = self._calculate_confidence_range(
+                    confidence_score)
 
             if self.display_settings["show_uncertainty_sources"] and confidence_details:
-                visualization["uncertainty_sources"] = self._format_uncertainty_sources(confidence_details)
+                visualization["uncertainty_sources"] = self._format_uncertainty_sources(
+                    confidence_details)
 
             if input_text:
-                visualization["input_text"] = input_text[:100] + ("..." if len(input_text) > 100 else "")
+                visualization["input_text"] = input_text[:100] + \
+                    ("..." if len(input_text) > 100 else "")
 
             if response_text:
-                visualization["response_preview"] = response_text[:200] + ("..." if len(response_text) > 200 else "")
+                visualization["response_preview"] = response_text[:200] + \
+                    ("..." if len(response_text) > 200 else "")
 
             return visualization
 
@@ -153,17 +156,17 @@ class ConfidenceVisualizer:
             logger.error(f"置信度可视化生成失败: {e}")
             return self._create_error_visualization()
 
-    def _calculate_confidence_range(self, confidence_score: float) -> Dict[str, float]:
+    def _calculate_confidence_range(
+        self, confidence_score: float) -> Dict[str, float]:
         """计算置信度区间
-        
+
         Args:
             confidence_score: 置信度分数
-            
+
         Returns:
             置信度区间
         """
-        base_range = 0.1
-        
+
         if confidence_score >= 0.8:
             range_width = 0.1
         elif confidence_score >= 0.6:
@@ -172,37 +175,39 @@ class ConfidenceVisualizer:
             range_width = 0.2
         else:
             range_width = 0.25
-        
+
         lower = max(0.0, confidence_score - range_width)
         upper = min(1.0, confidence_score + range_width)
-        
+
         return {
             "lower": round(lower * 100, 1),
             "upper": round(upper * 100, 1),
             "display": f"{round(lower * 100, 1)}% - {round(upper * 100, 1)}%"
         }
 
-    def _format_uncertainty_sources(self, confidence_details: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _format_uncertainty_sources(
+        self, confidence_details: Dict[str, Any]) -> List[Dict[str, Any]]:
         """格式化不确定性来源
-        
+
         Args:
             confidence_details: 置信度详情
-            
+
         Returns:
             格式化的不确定性来源列表
         """
         formatted_sources = []
-        
-        uncertainty_analysis = confidence_details.get("uncertainty_analysis", {})
+
+        uncertainty_analysis = confidence_details.get(
+            "uncertainty_analysis", {})
         sources = uncertainty_analysis.get("uncertainty_sources", [])
-        
+
         for source in sources:
             source_type = source.get("source", "unknown")
             source_info = self.UNCERTAINTY_SOURCE_MESSAGES.get(source_type, {
                 "title": source_type,
                 "recommendation": source.get("description", "")
             })
-            
+
             formatted_sources.append({
                 "type": source_type,
                 "title": source_info["title"],
@@ -210,15 +215,15 @@ class ConfidenceVisualizer:
                 "recommendation": source_info["recommendation"],
                 "description": source.get("description", "")
             })
-        
+
         return formatted_sources
 
     def _get_confidence_color(self, confidence_score: float) -> str:
         """获取置信度对应的颜色
-        
+
         Args:
             confidence_score: 置信度分数
-            
+
         Returns:
             颜色代码
         """
@@ -233,10 +238,10 @@ class ConfidenceVisualizer:
 
     def _classify_confidence(self, confidence_score: float) -> str:
         """分类置信度
-        
+
         Args:
             confidence_score: 置信度分数
-            
+
         Returns:
             置信度级别
         """
@@ -253,7 +258,7 @@ class ConfidenceVisualizer:
 
     def _create_error_visualization(self) -> Dict[str, Any]:
         """创建错误可视化
-        
+
         Returns:
             错误可视化数据
         """
@@ -271,11 +276,11 @@ class ConfidenceVisualizer:
         uncertainty_sources: List[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """生成用户反馈建议
-        
+
         Args:
             confidence_level: 置信度级别
             uncertainty_sources: 不确定性来源列表
-            
+
         Returns:
             反馈建议
         """
@@ -342,14 +347,14 @@ class ConfidenceVisualizer:
         include_guidance: bool = True
     ) -> str:
         """格式化用于显示的响应文本
-        
+
         Args:
             answer: 答案文本
             confidence_score: 置信度分数
             confidence_level: 置信度级别
             confidence_details: 置信度详情
             include_guidance: 是否包含用户指导
-            
+
         Returns:
             格式化的显示文本
         """
@@ -367,7 +372,8 @@ class ConfidenceVisualizer:
         lines.append(f"置信度: {round(confidence_score * 100, 1)}%")
 
         if self.display_settings["show_confidence_range"]:
-            confidence_range = self._calculate_confidence_range(confidence_score)
+            confidence_range = self._calculate_confidence_range(
+                confidence_score)
             lines.append(f"置信区间: {confidence_range['display']}")
 
         lines.append("")
@@ -377,23 +383,26 @@ class ConfidenceVisualizer:
         if include_guidance:
             lines.append(f"💡 {message_info['user_guidance']}")
 
-        if confidence_details and confidence_level in ["low", "very_low", "medium"]:
-            uncertainty_analysis = confidence_details.get("uncertainty_analysis", {})
+        if confidence_details and confidence_level in [
+            "low", "very_low", "medium"]:
+            uncertainty_analysis = confidence_details.get(
+                "uncertainty_analysis", {})
             sources = uncertainty_analysis.get("uncertainty_sources", [])
-            
+
             if sources:
                 lines.append("")
                 lines.append("**不确定性的可能来源:**")
                 for source in sources[:2]:
                     source_type = source.get("source", "unknown")
-                    source_info = self.UNCERTAINTY_SOURCE_MESSAGES.get(source_type, {})
+                    source_info = self.UNCERTAINTY_SOURCE_MESSAGES.get(
+                        source_type, {})
                     lines.append(f"- {source_info.get('title', source_type)}")
 
         return "\n".join(lines)
 
     def set_display_settings(self, settings: Dict[str, bool]):
         """设置显示选项
-        
+
         Args:
             settings: 显示设置
         """
@@ -405,7 +414,7 @@ class ConfidenceVisualizer:
             "show_uncertainty_sources",
             "color_enabled"
         ]
-        
+
         for key, value in settings.items():
             if key in valid_settings:
                 self.display_settings[key] = value
@@ -413,7 +422,7 @@ class ConfidenceVisualizer:
 
     def get_display_settings(self) -> Dict[str, bool]:
         """获取显示选项
-        
+
         Returns:
             显示设置
         """
@@ -422,18 +431,18 @@ class ConfidenceVisualizer:
 
 class ConfidenceFormatter:
     """置信度格式化器
-    
+
     提供不同格式的置信度输出
     """
 
     @staticmethod
     def format_percentage(confidence_score: float, decimals: int = 1) -> str:
         """格式化为百分比
-        
+
         Args:
             confidence_score: 置信度分数
             decimals: 小数位数
-            
+
         Returns:
             百分比字符串
         """
@@ -442,10 +451,10 @@ class ConfidenceFormatter:
     @staticmethod
     def format_fraction(confidence_score: float) -> str:
         """格式化为分数
-        
+
         Args:
             confidence_score: 置信度分数
-            
+
         Returns:
             分数字符串
         """
@@ -454,11 +463,11 @@ class ConfidenceFormatter:
     @staticmethod
     def format_bar(confidence_score: float, length: int = 10) -> str:
         """格式化为进度条
-        
+
         Args:
             confidence_score: 置信度分数
             length: 进度条长度
-            
+
         Returns:
             进度条字符串
         """
@@ -469,10 +478,10 @@ class ConfidenceFormatter:
     @staticmethod
     def format_badge(confidence_score: float) -> Dict[str, Any]:
         """格式化为徽章
-        
+
         Args:
             confidence_score: 置信度分数
-            
+
         Returns:
             徽章数据
         """

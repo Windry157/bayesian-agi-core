@@ -8,6 +8,8 @@ import requests
 import os
 
 # 测试图像分类
+
+
 def test_classify_image():
     url = "http://localhost:8004/api/vision/classify"
     # 使用一个简单的测试图像
@@ -24,6 +26,8 @@ def test_classify_image():
         print(f"测试图像 {test_image_path} 不存在，跳过图像分类测试")
 
 # 测试目标检测
+
+
 def test_detect_objects():
     url = "http://localhost:8004/api/vision/detect"
     # 使用一个简单的测试图像
@@ -40,6 +44,8 @@ def test_detect_objects():
         print(f"测试图像 {test_image_path} 不存在，跳目标检测测试")
 
 # 测试图像描述
+
+
 def test_describe_image():
     url = "http://localhost:8004/api/vision/describe"
     # 使用一个简单的测试图像
@@ -56,6 +62,8 @@ def test_describe_image():
         print(f"测试图像 {test_image_path} 不存在，跳过图像描述测试")
 
 # 测试健康检查
+
+
 def test_health_check():
     url = "http://localhost:8004/health"
     response = requests.get(url)
@@ -64,12 +72,15 @@ def test_health_check():
     assert response.status_code == 200
 
 # 测试监控端点
+
+
 def test_metrics():
     url = "http://localhost:8004/health/metrics"
     response = requests.get(url)
     print("监控端点 - Status code:", response.status_code)
     print("监控端点 - Response:", response.text)
     assert response.status_code == 200
+
 
 if __name__ == "__main__":
     print("测试视觉服务...")

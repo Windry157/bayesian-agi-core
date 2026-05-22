@@ -5,13 +5,11 @@ Multimodal Service
 处理多模态输入
 """
 
-import os
 import logging
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from src.core.multimodal.multimodal_processor import BasicMultimodalProcessor
-from src.core.monitoring import monitoring
 
 # 配置日志
 logging.basicConfig(
@@ -55,7 +53,8 @@ async def process_text(text: str = Form(...), task: str = Form(...)):
         logger.info(f"文本处理结果: {result}")
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process text: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to process text: {e}")
 
 
 # 处理图像输入
@@ -70,7 +69,8 @@ async def process_image(file: UploadFile = File(...), task: str = Form(...)):
         logger.info(f"图像处理结果: {result}")
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process image: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to process image: {e}")
 
 
 # 处理音频输入
@@ -85,7 +85,8 @@ async def process_audio(file: UploadFile = File(...), task: str = Form(...)):
         logger.info(f"音频处理结果: {result}")
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process audio: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to process audio: {e}")
 
 
 # 获取支持的输入类型
@@ -136,4 +137,5 @@ test_metric 42
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("src.multimodal_service", host="0.0.0.0", port=8005, reload=True)
+    uvicorn.run("src.multimodal_service",
+                host="0.0.0.0", port=8005, reload=True)

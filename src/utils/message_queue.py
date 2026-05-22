@@ -111,7 +111,8 @@ class MessageQueueManager:
             logger.error(f"发布消息失败: {e}")
             raise
 
-    def subscribe(self, queue_name: str, callback: Callable[[Dict[str, Any]], None]):
+    def subscribe(self, queue_name: str,
+                  callback: Callable[[Dict[str, Any]], None]):
         """订阅消息
 
         Args:

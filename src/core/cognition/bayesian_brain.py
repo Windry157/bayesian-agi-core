@@ -5,9 +5,8 @@
 负责概率更新和决策逻辑
 """
 
-import asyncio
 import math
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 from ..interfaces import IBayesianBrain
 from .chain_of_thought import ChainOfThought
 
@@ -92,7 +91,7 @@ class BayesianBrain(IBayesianBrain):
         """
         # 改进的似然计算
         likelihood = 0.5
-        
+
         # 基于观测数据计算似然
         if 'evidence' in observation:
             evidence = observation['evidence']
@@ -107,7 +106,7 @@ class BayesianBrain(IBayesianBrain):
                 # 文本证据匹配
                 if evidence.lower() in state.lower():
                     likelihood += 0.4
-        
+
         # 确保似然值在合理范围内
         return min(0.99, max(0.01, likelihood))
 
@@ -122,7 +121,7 @@ class BayesianBrain(IBayesianBrain):
         """
         if not possible_actions:
             return "no_action"
-        
+
         # 计算每个行动的信息增益
         action_scores = {}
         for action in possible_actions:
@@ -132,10 +131,10 @@ class BayesianBrain(IBayesianBrain):
             expected_value = self._calculate_expected_value(action)
             # 综合评分
             action_scores[action] = info_gain * 0.6 + expected_value * 0.4
-        
+
         # 选择评分最高的行动
         best_action = max(action_scores, key=action_scores.get)
-        
+
         # 使用认知协调器做出最终决策
         situation = {
             "possible_actions": possible_actions,
@@ -147,11 +146,11 @@ class BayesianBrain(IBayesianBrain):
 
         # 生成思维链
         problem = f"从{possible_actions}中选择最佳行动，基于信息增益和预期价值"
-        chain = self.chain_of_thought.generate_chain(problem, situation)
+        self.chain_of_thought.generate_chain(problem, situation)
 
         # 使用认知协调器做出最终决策
         decision = self.cognition_coordinator.make_decision(situation)
-        
+
         # 尊重认知协调器的决策（如果有）
         if "decision" in decision and decision["decision"] in possible_actions:
             best_action = decision["decision"]
@@ -160,7 +159,7 @@ class BayesianBrain(IBayesianBrain):
         self.actions.append(best_action)
 
         return best_action
-    
+
     def _calculate_expected_value(self, action: str) -> float:
         """计算行动的预期价值
 
@@ -173,14 +172,14 @@ class BayesianBrain(IBayesianBrain):
         # 简单的预期价值计算
         # 实际应用中需要更复杂的价值函数
         value = 0.0
-        
+
         # 基于行动与当前状态的相关性
         for state, prob in self.world_model.items():
             if action in state.lower():
                 value += prob * 1.5
             else:
                 value += prob * 0.8
-        
+
         return value
 
     def _calculate_information_gain(self, action: str) -> float:
@@ -195,20 +194,20 @@ class BayesianBrain(IBayesianBrain):
         # 改进的信息增益计算
         # 计算当前熵
         current_entropy = self._calculate_entropy(self.world_model)
-        
+
         # 模拟行动后的状态分布
         predicted_states = self._predict_states_after_action(action)
-        
+
         # 计算预期熵
         expected_entropy = 0.0
         for state, prob in predicted_states.items():
             expected_entropy -= prob * math.log2(prob) if prob > 0 else 0
-        
+
         # 信息增益 = 当前熵 - 预期熵
         information_gain = current_entropy - expected_entropy
-        
+
         return max(0.0, information_gain)
-    
+
     def _calculate_entropy(self, distribution: Dict[str, float]) -> float:
         """计算概率分布的熵
 
@@ -223,7 +222,7 @@ class BayesianBrain(IBayesianBrain):
             if prob > 0:
                 entropy -= prob * math.log2(prob)
         return entropy
-    
+
     def _predict_states_after_action(self, action: str) -> Dict[str, float]:
         """预测行动后的状态分布
 
@@ -235,7 +234,7 @@ class BayesianBrain(IBayesianBrain):
         """
         # 基于当前状态和行动预测新的状态分布
         predicted = {}
-        
+
         for state, prob in self.world_model.items():
             # 简单的状态转移模型
             # 实际应用中需要更复杂的转移模型
@@ -245,13 +244,13 @@ class BayesianBrain(IBayesianBrain):
             else:
                 # 行动与状态无关，保持概率
                 predicted[state] = prob * 0.9
-        
+
         # 归一化
         total = sum(predicted.values())
         if total > 0:
             for state in predicted:
                 predicted[state] /= total
-        
+
         return predicted
 
     def get_beliefs(self) -> Dict[str, float]:

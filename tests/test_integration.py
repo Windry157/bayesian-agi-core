@@ -1,6 +1,5 @@
-import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from src.main import app
 
@@ -83,7 +82,8 @@ class TestErrorHandling:
         """测试前设置"""
         self.client = TestClient(app)
 
-    @patch('src.main.assistant.add_memory', side_effect=Exception("Database error"))
+    @patch('src.main.assistant.add_memory',
+           side_effect=Exception("Database error"))
     def test_add_memory_error_handling(self, mock_add_memory):
         """测试添加记忆错误处理"""
         payload = {"content": "测试内容"}
@@ -92,7 +92,8 @@ class TestErrorHandling:
         data = response.json()
         assert "Failed to add memory" in data["detail"]
 
-    @patch('src.main.assistant.retrieve_memories', side_effect=Exception("Search error"))
+    @patch('src.main.assistant.retrieve_memories',
+           side_effect=Exception("Search error"))
     def test_search_memory_error_handling(self, mock_retrieve_memories):
         """测试检索记忆错误处理"""
         response = self.client.get("/api/memory/search?query=test")
@@ -100,7 +101,8 @@ class TestErrorHandling:
         data = response.json()
         assert "Failed to search memory" in data["detail"]
 
-    @patch('src.main.assistant.make_decision', side_effect=Exception("Decision error"))
+    @patch('src.main.assistant.make_decision',
+           side_effect=Exception("Decision error"))
     def test_decision_error_handling(self, mock_make_decision):
         """测试决策错误处理"""
         payload = ["action_1"]

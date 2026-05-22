@@ -12,13 +12,13 @@ class BayesianAGIError(Exception):
 
 class APIError(BayesianAGIError):
     """API 错误异常
-    
+
     当API返回非200状态码时抛出
     """
-    
+
     def __init__(self, message: str, status_code: int):
         """初始化API错误异常
-        
+
         Args:
             message: 错误信息
             status_code: 状态码

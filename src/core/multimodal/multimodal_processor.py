@@ -6,7 +6,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Any, Union
 from PIL import Image
 import numpy as np
 
@@ -34,7 +34,6 @@ class MultimodalProcessor(ABC):
         Returns:
             处理结果
         """
-        pass
 
     @abstractmethod
     def get_supported_input_types(self) -> List[str]:
@@ -43,7 +42,6 @@ class MultimodalProcessor(ABC):
         Returns:
             支持的输入类型列表
         """
-        pass
 
     @abstractmethod
     def get_supported_tasks(self) -> List[str]:
@@ -52,7 +50,6 @@ class MultimodalProcessor(ABC):
         Returns:
             支持的任务类型列表
         """
-        pass
 
 
 class BasicMultimodalProcessor(MultimodalProcessor):
@@ -168,7 +165,8 @@ class BasicMultimodalProcessor(MultimodalProcessor):
                         "confidence": 0.98,
                         "bbox": [100, 100, 200, 300],
                     },
-                    {"class": "car", "confidence": 0.92, "bbox": [300, 200, 500, 350]},
+                    {"class": "car", "confidence": 0.92,
+                        "bbox": [300, 200, 500, 350]},
                 ],
                 "input_type": "image",
                 "task": task,

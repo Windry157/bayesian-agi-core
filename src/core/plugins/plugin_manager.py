@@ -50,7 +50,8 @@ class PluginManager:
             plugin_name = os.path.splitext(plugin_filename)[0]
 
             # 加载插件模块
-            spec = importlib.util.spec_from_file_location(plugin_name, plugin_path)
+            spec = importlib.util.spec_from_file_location(
+                plugin_name, plugin_path)
             if spec is None:
                 logger.error(f"无法创建插件模块规范: {plugin_path}")
                 return False

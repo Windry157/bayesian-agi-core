@@ -5,12 +5,10 @@
 集成Prometheus和Grafana
 """
 
-import time
 from prometheus_client import Counter, Gauge, Histogram, Summary
 from aioprometheus import Counter as AsyncCounter
 from aioprometheus import Gauge as AsyncGauge
 from aioprometheus import Histogram as AsyncHistogram
-from aioprometheus import Summary as AsyncSummary
 from aioprometheus import Registry, render
 
 
@@ -95,7 +93,8 @@ class MonitoringSystem:
         self.registry.register(self.async_service_health)
         self.registry.register(self.async_learning_cycles)
 
-    def record_request(self, method: str, endpoint: str, status: int, duration: float):
+    def record_request(self, method: str, endpoint: str,
+                       status: int, duration: float):
         """记录HTTP请求
 
         Args:
@@ -107,7 +106,8 @@ class MonitoringSystem:
         self.request_counter.labels(
             method=method, endpoint=endpoint, status=status
         ).inc()
-        self.request_duration.labels(method=method, endpoint=endpoint).observe(duration)
+        self.request_duration.labels(
+            method=method, endpoint=endpoint).observe(duration)
 
     async def async_record_request(
         self, method: str, endpoint: str, status: int, duration: float
@@ -214,7 +214,8 @@ class MonitoringSystem:
         """
         self.decision_making_time.observe(duration)
 
-    async def async_record_security_event(self, event_type: str, severity: str):
+    async def async_record_security_event(
+        self, event_type: str, severity: str):
         """异步记录安全事件
 
         Args:

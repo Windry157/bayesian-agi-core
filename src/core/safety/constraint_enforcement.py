@@ -7,7 +7,7 @@
 
 import re
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 # 配置日志
 logging.basicConfig(
@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 class ConstraintEnforcementModule:
     """约束执行模块
-    
+
     对系统输出进行严格的非协商性检查
     """
-    
+
     def __init__(self):
         """初始化约束执行模块"""
         # 敏感主题列表
@@ -76,7 +76,7 @@ class ConstraintEnforcementModule:
                 "response": "我无法提供与违法行为相关的信息。请遵守法律法规。"
             }
         }
-        
+
         # 偏见检测模式
         self.bias_patterns = [
             r"(男|女)性(不|不适合|不如|更适合)",
@@ -86,22 +86,23 @@ class ConstraintEnforcementModule:
             r"(国家|地区)的人都",
             r"(性别|性取向)不正常"
         ]
-        
+
         # 隐私保护模式
         self.privacy_patterns = [
             r"个人信息", r"隐私", r"身份证", r"银行卡", r"密码",
             r"personal information", r"privacy", r"ID card", r"bank card", r"password"
         ]
-        
+
         logger.info("约束执行模块初始化完成")
-    
-    def check_constraints(self, input_text: str, output_text: str) -> Dict[str, Any]:
+
+    def check_constraints(self, input_text: str,
+                          output_text: str) -> Dict[str, Any]:
         """检查约束
-        
+
         Args:
             input_text: 输入文本
             output_text: 输出文本
-            
+
         Returns:
             检查结果，包含是否通过和替代响应
         """
@@ -115,7 +116,7 @@ class ConstraintEnforcementModule:
                     "reason": f"敏感主题: {topic}",
                     "alternative_response": config["response"]
                 }
-        
+
         # 检查偏见
         if self._contains_patterns(output_text, self.bias_patterns):
             logger.warning("检测到偏见内容")
@@ -124,7 +125,7 @@ class ConstraintEnforcementModule:
                 "reason": "偏见内容",
                 "alternative_response": "我致力于提供公平、无偏见的信息。每个人都应该受到尊重和平等对待。"
             }
-        
+
         # 检查隐私泄露
         if self._contains_patterns(output_text, self.privacy_patterns):
             logger.warning("检测到隐私相关内容")
@@ -133,7 +134,7 @@ class ConstraintEnforcementModule:
                 "reason": "隐私内容",
                 "alternative_response": "我重视您的隐私。请不要在对话中分享敏感个人信息。"
             }
-        
+
         # 检查有害内容
         if self._contains_harmful_content(output_text):
             logger.warning("检测到有害内容")
@@ -142,7 +143,7 @@ class ConstraintEnforcementModule:
                 "reason": "有害内容",
                 "alternative_response": "我无法提供可能有害或不适当的内容。"
             }
-        
+
         # 检查法律合规性
         if self._contains_illegal_content(output_text):
             logger.warning("检测到违法内容")
@@ -151,21 +152,21 @@ class ConstraintEnforcementModule:
                 "reason": "违法内容",
                 "alternative_response": "我无法提供与违法行为相关的信息。请遵守法律法规。"
             }
-        
+
         # 所有检查通过
         return {
             "passed": True,
             "reason": "无问题",
             "alternative_response": None
         }
-    
+
     def _contains_patterns(self, text: str, patterns: List[str]) -> bool:
         """检查文本是否包含指定模式
-        
+
         Args:
             text: 文本
             patterns: 模式列表
-            
+
         Returns:
             是否包含模式
         """
@@ -173,13 +174,13 @@ class ConstraintEnforcementModule:
             if re.search(pattern, text, re.IGNORECASE):
                 return True
         return False
-    
+
     def _contains_harmful_content(self, text: str) -> bool:
         """检查是否包含有害内容
-        
+
         Args:
             text: 文本
-            
+
         Returns:
             是否包含有害内容
         """
@@ -188,13 +189,13 @@ class ConstraintEnforcementModule:
             r"how to commit suicide", r"how to hurt yourself", r"how to harm others"
         ]
         return self._contains_patterns(text, harmful_patterns)
-    
+
     def _contains_illegal_content(self, text: str) -> bool:
         """检查是否包含违法内容
-        
+
         Args:
             text: 文本
-            
+
         Returns:
             是否包含违法内容
         """
@@ -203,10 +204,11 @@ class ConstraintEnforcementModule:
             r"how to make drugs", r"how to smuggle", r"how to steal"
         ]
         return self._contains_patterns(text, illegal_patterns)
-    
-    def add_sensitive_topic(self, topic: str, patterns: List[str], response: str):
+
+    def add_sensitive_topic(
+        self, topic: str, patterns: List[str], response: str):
         """添加敏感主题
-        
+
         Args:
             topic: 主题名称
             patterns: 模式列表
@@ -217,20 +219,20 @@ class ConstraintEnforcementModule:
             "response": response
         }
         logger.info(f"添加敏感主题: {topic}")
-    
+
     def remove_sensitive_topic(self, topic: str):
         """移除敏感主题
-        
+
         Args:
             topic: 主题名称
         """
         if topic in self.sensitive_topics:
             del self.sensitive_topics[topic]
             logger.info(f"移除敏感主题: {topic}")
-    
+
     def get_sensitive_topics(self) -> Dict[str, Dict[str, Any]]:
         """获取敏感主题列表
-        
+
         Returns:
             敏感主题字典
         """

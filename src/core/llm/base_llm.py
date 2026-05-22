@@ -24,7 +24,6 @@ class BaseLLM(ABC):
         Returns:
             流式生成的响应
         """
-        pass
 
     @abstractmethod
     async def get_available_models(self) -> List[Dict[str, Any]]:
@@ -33,4 +32,3 @@ class BaseLLM(ABC):
         Returns:
             模型列表
         """
-        pass

@@ -6,7 +6,7 @@
 """
 
 import time
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
 
 
 class System1:
@@ -74,7 +74,8 @@ class System1:
         else:
             return "normal"
 
-    def _apply_heuristics(self, situation: Dict[str, Any], situation_type: str) -> Any:
+    def _apply_heuristics(
+        self, situation: Dict[str, Any], situation_type: str) -> Any:
         """应用启发式规则
 
         Args:
@@ -180,7 +181,8 @@ class System1:
 
         return matches / len(common_keys)
 
-    def _calculate_confidence(self, situation: Dict[str, Any], decision: Any) -> float:
+    def _calculate_confidence(
+        self, situation: Dict[str, Any], decision: Any) -> float:
         """计算决策的置信度
 
         Args:

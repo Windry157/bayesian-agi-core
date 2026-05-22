@@ -43,7 +43,8 @@ class ModelCache:
                 return self.cache[key]["model"]
             return None
 
-    def set(self, key: str, model: Any, metadata: Optional[Dict[str, Any]] = None):
+    def set(self, key: str, model: Any,
+            metadata: Optional[Dict[str, Any]] = None):
         """设置缓存的模型
 
         Args:

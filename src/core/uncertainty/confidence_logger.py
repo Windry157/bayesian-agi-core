@@ -8,7 +8,7 @@
 import logging
 import json
 import uuid
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from datetime import datetime
 from contextvars import ContextVar
 from pathlib import Path
@@ -69,7 +69,7 @@ class TraceRecord:
         """截断数据以避免日志过大"""
         if data is None:
             return None
-        
+
         if isinstance(data, dict):
             truncated = {}
             for key, value in data.items():
@@ -78,7 +78,7 @@ class TraceRecord:
                 else:
                     truncated[key] = self._truncate_data(value, max_length)
             return truncated
-        
+
         if isinstance(data, list):
             truncated = []
             for item in data[:10]:
@@ -86,32 +86,32 @@ class TraceRecord:
             if len(data) > 10:
                 truncated.append(f"... and {len(data) - 10} more items")
             return truncated
-        
+
         if isinstance(data, str) and len(data) > max_length:
             return data[:max_length] + "..."
-        
+
         return data
 
 
 class ConfidenceLogger:
     """置信度日志记录器
-    
+
     提供全链路日志记录和可追溯性功能
     """
 
     def __init__(self, log_dir: str = "memory/logs/confidence"):
         """初始化置信度日志记录器
-        
+
         Args:
             log_dir: 日志存储目录
         """
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self._trace_history: List[TraceRecord] = []
         self._max_history_size = 10000
         self._lock = threading.Lock()
-        
+
         logger.info(f"置信度日志记录器初始化完成: {log_dir}")
 
     def create_trace_id(self) -> str:
@@ -143,7 +143,7 @@ class ConfidenceLogger:
         duration_ms: float = None
     ) -> TraceRecord:
         """记录操作日志
-        
+
         Args:
             operation: 操作名称
             component: 组件名称
@@ -152,12 +152,12 @@ class ConfidenceLogger:
             metadata: 元数据
             error: 错误信息
             duration_ms: 耗时（毫秒）
-            
+
         Returns:
             追踪记录
         """
         trace_id = self.get_trace_id() or self.create_trace_id()
-        
+
         record = TraceRecord(
             trace_id=trace_id,
             operation=operation,
@@ -168,21 +168,21 @@ class ConfidenceLogger:
             error=error,
             duration_ms=duration_ms
         )
-        
+
         with self._lock:
             self._trace_history.append(record)
-            
+
             if len(self._trace_history) > self._max_history_size:
                 self._trace_history = self._trace_history[-self._max_history_size:]
-        
+
         self._save_to_file(record)
-        
+
         log_message = f"[{trace_id}] {component}.{operation}"
         if error:
             logger.error(f"{log_message} - ERROR: {error}")
         else:
             logger.info(f"{log_message} - OK ({duration_ms:.2f}ms)")
-        
+
         return record
 
     def _save_to_file(self, record: TraceRecord):
@@ -190,51 +190,56 @@ class ConfidenceLogger:
         try:
             date_str = datetime.now().strftime("%Y%m%d")
             log_file = self.log_dir / f"confidence_{date_str}.jsonl"
-            
+
             with open(log_file, 'a', encoding='utf-8') as f:
-                f.write(json.dumps(record.to_dict(), ensure_ascii=False) + "\n")
-        
+                f.write(
+    json.dumps(
+        record.to_dict(),
+        ensure_ascii=False) +
+         "\n")
+
         except Exception as e:
             logger.warning(f"保存日志到文件失败: {e}")
 
     def get_trace(self, trace_id: str) -> List[TraceRecord]:
         """获取追踪记录
-        
+
         Args:
             trace_id: 追踪ID
-            
+
         Returns:
             追踪记录列表
         """
         with self._lock:
             return [r for r in self._trace_history if r.trace_id == trace_id]
 
-    def get_traces_by_session(self, session_id: str) -> List[List[TraceRecord]]:
+    def get_traces_by_session(
+        self, session_id: str) -> List[List[TraceRecord]]:
         """获取会话的所有追踪
-        
+
         Args:
             session_id: 会话ID
-            
+
         Returns:
             追踪记录分组列表
         """
         trace_groups = {}
-        
+
         with self._lock:
             for record in self._trace_history:
                 if record.metadata.get("session_id") == session_id:
                     if record.trace_id not in trace_groups:
                         trace_groups[record.trace_id] = []
                     trace_groups[record.trace_id].append(record)
-        
+
         return list(trace_groups.values())
 
     def get_recent_traces(self, limit: int = 100) -> List[TraceRecord]:
         """获取最近的追踪记录
-        
+
         Args:
             limit: 限制数量
-            
+
         Returns:
             追踪记录列表
         """
@@ -243,31 +248,33 @@ class ConfidenceLogger:
 
     def get_operation_stats(self) -> Dict[str, Any]:
         """获取操作统计
-        
+
         Returns:
             操作统计信息
         """
         with self._lock:
             if not self._trace_history:
                 return {"total_operations": 0}
-            
+
             operation_counts = {}
             component_counts = {}
             error_count = 0
             total_duration = 0
             duration_count = 0
-            
+
             for record in self._trace_history:
-                operation_counts[record.operation] = operation_counts.get(record.operation, 0) + 1
-                component_counts[record.component] = component_counts.get(record.component, 0) + 1
-                
+                operation_counts[record.operation] = operation_counts.get(
+                    record.operation, 0) + 1
+                component_counts[record.component] = component_counts.get(
+                    record.component, 0) + 1
+
                 if record.error:
                     error_count += 1
-                
+
                 if record.duration_ms is not None:
                     total_duration += record.duration_ms
                     duration_count += 1
-            
+
             return {
                 "total_operations": len(self._trace_history),
                 "operation_counts": operation_counts,
@@ -286,28 +293,28 @@ class ConfidenceLogger:
         limit: int = 100
     ) -> List[TraceRecord]:
         """搜索追踪记录
-        
+
         Args:
             operation: 操作名称
             component: 组件名称
             error_only: 仅返回错误记录
             limit: 限制数量
-            
+
         Returns:
             匹配的追踪记录列表
         """
         with self._lock:
             results = self._trace_history.copy()
-            
+
             if operation:
                 results = [r for r in results if r.operation == operation]
-            
+
             if component:
                 results = [r for r in results if r.component == component]
-            
+
             if error_only:
                 results = [r for r in results if r.error is not None]
-            
+
             return results[-limit:]
 
     def clear_history(self):
@@ -319,7 +326,7 @@ class ConfidenceLogger:
 
 class ConfidenceTracer:
     """置信度追踪器上下文管理器
-    
+
     用于追踪代码块的执行
     """
 
@@ -331,7 +338,7 @@ class ConfidenceTracer:
         metadata: Dict[str, Any] = None
     ):
         """初始化追踪器
-        
+
         Args:
             logger_instance: 日志记录器实例
             operation: 操作名称
@@ -359,7 +366,7 @@ class ConfidenceTracer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """退出上下文"""
         duration_ms = (datetime.now() - self.start_time).total_seconds() * 1000
-        
+
         if exc_type is not None:
             self.logger_instance.log_operation(
                 operation=self.operation,
@@ -369,7 +376,7 @@ class ConfidenceTracer:
                 duration_ms=duration_ms
             )
             return False
-        
+
         self.logger_instance.log_operation(
             operation=self.operation,
             component=self.component,
@@ -388,14 +395,15 @@ class ConfidenceTracer:
 confidence_logger = ConfidenceLogger()
 
 
-def create_tracer(operation: str, component: str, metadata: Dict[str, Any] = None) -> ConfidenceTracer:
+def create_tracer(operation: str, component: str,
+                  metadata: Dict[str, Any] = None) -> ConfidenceTracer:
     """创建追踪器
-    
+
     Args:
         operation: 操作名称
         component: 组件名称
         metadata: 元数据
-        
+
     Returns:
         置信度追踪器
     """
