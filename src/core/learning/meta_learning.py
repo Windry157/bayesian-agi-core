@@ -7,7 +7,7 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 # 配置日志
 logging.basicConfig(
@@ -29,7 +29,7 @@ class PerformanceEvaluator:
             "accuracy": 0.0,
             "response_time": 0.0,
             "user_satisfaction": 0.0,
-            "knowledge_expansion": 0.0
+            "knowledge_expansion": 0.0,
         }
 
         logger.info("性能评估器初始化完成")
@@ -47,7 +47,7 @@ class PerformanceEvaluator:
             # 记录评估历史
             evaluation_record = {
                 "timestamp": datetime.now().isoformat(),
-                "metrics": metrics
+                "metrics": metrics,
             }
             self.evaluation_history.append(evaluation_record)
 
@@ -76,7 +76,7 @@ class PerformanceEvaluator:
             "accuracy": random.uniform(0.7, 0.95),
             "response_time": random.uniform(0.1, 1.0),
             "user_satisfaction": random.uniform(0.6, 0.95),
-            "knowledge_expansion": random.uniform(0.0, 0.2)
+            "knowledge_expansion": random.uniform(0.0, 0.2),
         }
 
         # 更新当前指标
@@ -113,8 +113,7 @@ class SelfReflectionEngine:
 
         logger.info("自我反思引擎初始化完成")
 
-    async def analyze_weaknesses(
-        self, metrics: Dict[str, float]) -> Dict[str, Any]:
+    async def analyze_weaknesses(self, metrics: Dict[str, float]) -> Dict[str, Any]:
         """分析系统弱点
 
         Args:
@@ -135,7 +134,7 @@ class SelfReflectionEngine:
                 "timestamp": datetime.now().isoformat(),
                 "metrics": metrics,
                 "weaknesses": weaknesses,
-                "suggestions": suggestions
+                "suggestions": suggestions,
             }
             self.reflection_history.append(reflection_record)
 
@@ -144,17 +143,15 @@ class SelfReflectionEngine:
                 self.reflection_history = self.reflection_history[-50:]
 
             logger.info("自我反思分析完成")
-            return {
-                "weaknesses": weaknesses,
-                "suggestions": suggestions
-            }
+            return {"weaknesses": weaknesses, "suggestions": suggestions}
 
         except Exception as e:
             logger.error(f"自我反思分析失败: {e}")
             return {"error": str(e)}
 
     async def _identify_weaknesses(
-        self, metrics: Dict[str, float]) -> List[Dict[str, Any]]:
+        self, metrics: Dict[str, float]
+    ) -> List[Dict[str, Any]]:
         """识别弱点
 
         Args:
@@ -167,41 +164,50 @@ class SelfReflectionEngine:
 
         # 分析各指标
         if metrics.get("accuracy", 0) < 0.8:
-            weaknesses.append({
-                "type": "accuracy",
-                "severity": 0.7,
-                "description": "回答准确性不足",
-                "impact": "用户体验下降"
-            })
+            weaknesses.append(
+                {
+                    "type": "accuracy",
+                    "severity": 0.7,
+                    "description": "回答准确性不足",
+                    "impact": "用户体验下降",
+                }
+            )
 
         if metrics.get("response_time", 0) > 0.5:
-            weaknesses.append({
-                "type": "response_time",
-                "severity": 0.5,
-                "description": "响应时间过长",
-                "impact": "用户等待时间增加"
-            })
+            weaknesses.append(
+                {
+                    "type": "response_time",
+                    "severity": 0.5,
+                    "description": "响应时间过长",
+                    "impact": "用户等待时间增加",
+                }
+            )
 
         if metrics.get("user_satisfaction", 0) < 0.7:
-            weaknesses.append({
-                "type": "user_satisfaction",
-                "severity": 0.8,
-                "description": "用户满意度低",
-                "impact": "用户流失风险"
-            })
+            weaknesses.append(
+                {
+                    "type": "user_satisfaction",
+                    "severity": 0.8,
+                    "description": "用户满意度低",
+                    "impact": "用户流失风险",
+                }
+            )
 
         if metrics.get("knowledge_expansion", 0) < 0.05:
-            weaknesses.append({
-                "type": "knowledge_expansion",
-                "severity": 0.6,
-                "description": "知识扩展速度慢",
-                "impact": "系统能力增长受限"
-            })
+            weaknesses.append(
+                {
+                    "type": "knowledge_expansion",
+                    "severity": 0.6,
+                    "description": "知识扩展速度慢",
+                    "impact": "系统能力增长受限",
+                }
+            )
 
         return weaknesses
 
     async def _generate_suggestions(
-        self, weaknesses: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        self, weaknesses: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """生成改进建议
 
         Args:
@@ -214,36 +220,44 @@ class SelfReflectionEngine:
 
         for weakness in weaknesses:
             if weakness["type"] == "accuracy":
-                suggestions.append({
-                    "target": "accuracy",
-                    "action": "增强知识图谱",
-                    "priority": weakness["severity"],
-                    "description": "添加更多领域知识，提高推理能力"
-                })
+                suggestions.append(
+                    {
+                        "target": "accuracy",
+                        "action": "增强知识图谱",
+                        "priority": weakness["severity"],
+                        "description": "添加更多领域知识，提高推理能力",
+                    }
+                )
 
             elif weakness["type"] == "response_time":
-                suggestions.append({
-                    "target": "response_time",
-                    "action": "优化缓存策略",
-                    "priority": weakness["severity"],
-                    "description": "改进内存缓存，减少计算时间"
-                })
+                suggestions.append(
+                    {
+                        "target": "response_time",
+                        "action": "优化缓存策略",
+                        "priority": weakness["severity"],
+                        "description": "改进内存缓存，减少计算时间",
+                    }
+                )
 
             elif weakness["type"] == "user_satisfaction":
-                suggestions.append({
-                    "target": "user_satisfaction",
-                    "action": "优化交互方式",
-                    "priority": weakness["severity"],
-                    "description": "改进对话风格，增加个性化"
-                })
+                suggestions.append(
+                    {
+                        "target": "user_satisfaction",
+                        "action": "优化交互方式",
+                        "priority": weakness["severity"],
+                        "description": "改进对话风格，增加个性化",
+                    }
+                )
 
             elif weakness["type"] == "knowledge_expansion":
-                suggestions.append({
-                    "target": "knowledge_expansion",
-                    "action": "增强主动学习",
-                    "priority": weakness["severity"],
-                    "description": "增加自主探索，扩展知识边界"
-                })
+                suggestions.append(
+                    {
+                        "target": "knowledge_expansion",
+                        "action": "增强主动学习",
+                        "priority": weakness["severity"],
+                        "description": "增加自主探索，扩展知识边界",
+                    }
+                )
 
         return suggestions
 
@@ -268,8 +282,7 @@ class StrategyAdaptation:
 
         logger.info("策略适应器初始化完成")
 
-    async def generate_improvements(
-        self, insights: Dict[str, Any]) -> Dict[str, Any]:
+    async def generate_improvements(self, insights: Dict[str, Any]) -> Dict[str, Any]:
         """生成改进策略
 
         Args:
@@ -286,7 +299,7 @@ class StrategyAdaptation:
             adaptation_record = {
                 "timestamp": datetime.now().isoformat(),
                 "insights": insights,
-                "improvements": improvements
+                "improvements": improvements,
             }
             self.adaptation_history.append(adaptation_record)
 
@@ -302,7 +315,8 @@ class StrategyAdaptation:
             return {"error": str(e)}
 
     async def _create_improvement_plan(
-        self, insights: Dict[str, Any]) -> Dict[str, Any]:
+        self, insights: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """创建改进计划
 
         Args:
@@ -315,7 +329,8 @@ class StrategyAdaptation:
 
         # 按优先级排序
         sorted_suggestions = sorted(
-            suggestions, key=lambda x: x["priority"], reverse=True)
+            suggestions, key=lambda x: x["priority"], reverse=True
+        )
 
         # 生成改进计划
         improvement_plan = {
@@ -323,7 +338,7 @@ class StrategyAdaptation:
             "immediate_actions": [],
             "short_term_actions": [],
             "medium_term_actions": [],
-            "long_term_actions": []
+            "long_term_actions": [],
         }
 
         for suggestion in sorted_suggestions:
@@ -339,8 +354,11 @@ class StrategyAdaptation:
                 improvement_plan["long_term_actions"].append(suggestion)
 
         # 检查是否需要架构变更
-        if any(s["target"] in ["knowledge_expansion", "accuracy"]
-               for s in sorted_suggestions if s["priority"] >= 0.8):
+        if any(
+            s["target"] in ["knowledge_expansion", "accuracy"]
+            for s in sorted_suggestions
+            if s["priority"] >= 0.8
+        ):
             improvement_plan["requires_architectural_change"] = True
 
         return improvement_plan
@@ -380,7 +398,7 @@ class ArchitectureEvolution:
             evolution_record = {
                 "timestamp": datetime.now().isoformat(),
                 "improvements": improvements,
-                "changes": changes
+                "changes": changes,
             }
             self.evolution_history.append(evolution_record)
 
@@ -394,7 +412,8 @@ class ArchitectureEvolution:
             logger.error(f"架构进化失败: {e}")
 
     async def _execute_architectural_changes(
-        self, improvements: Dict[str, Any]) -> List[Dict[str, Any]]:
+        self, improvements: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """执行架构变更
 
         Args:
@@ -408,22 +427,30 @@ class ArchitectureEvolution:
         # 检查需要的架构变更
         if improvements.get("requires_architectural_change", False):
             # 处理知识扩展相关变更
-            if any(s["target"] == "knowledge_expansion" for s in improvements.get(
-                "immediate_actions", [])):
-                changes.append({
-                    "type": "knowledge_system_improvement",
-                    "description": "增强知识图谱和记忆系统",
-                    "status": "planned"
-                })
+            if any(
+                s["target"] == "knowledge_expansion"
+                for s in improvements.get("immediate_actions", [])
+            ):
+                changes.append(
+                    {
+                        "type": "knowledge_system_improvement",
+                        "description": "增强知识图谱和记忆系统",
+                        "status": "planned",
+                    }
+                )
 
             # 处理准确性相关变更
-            if any(s["target"] == "accuracy" for s in improvements.get(
-                "immediate_actions", [])):
-                changes.append({
-                    "type": "reasoning_improvement",
-                    "description": "增强推理能力和贝叶斯更新算法",
-                    "status": "planned"
-                })
+            if any(
+                s["target"] == "accuracy"
+                for s in improvements.get("immediate_actions", [])
+            ):
+                changes.append(
+                    {
+                        "type": "reasoning_improvement",
+                        "description": "增强推理能力和贝叶斯更新算法",
+                        "status": "planned",
+                    }
+                )
 
         return changes
 
@@ -479,7 +506,7 @@ class MetaLearningArchitecture:
             return {
                 "metrics": metrics,
                 "insights": insights,
-                "improvements": improvements
+                "improvements": improvements,
             }
 
         except Exception as e:
@@ -496,7 +523,7 @@ class MetaLearningArchitecture:
             "performance": self.evaluation_layer.get_current_metrics(),
             "reflection_count": len(self.reflection_layer.get_reflection_history()),
             "adaptation_count": len(self.adaptation_layer.get_adaptation_history()),
-            "evolution_count": len(self.evolution_layer.get_evolution_history())
+            "evolution_count": len(self.evolution_layer.get_evolution_history()),
         }
 
 

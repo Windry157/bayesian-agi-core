@@ -5,11 +5,12 @@
 负责管理服务的高可用设置和故障转移策略
 """
 
-import logging
 import asyncio
-from typing import Dict, Optional, Any
-from .service_discovery import service_discovery
+import logging
+from typing import Any, Dict, Optional
+
 from .http_client import http_client_manager
+from .service_discovery import service_discovery
 
 # 配置日志
 logging.basicConfig(
@@ -49,8 +50,7 @@ class HighAvailabilityManager:
         """启动高可用管理器"""
         if not self.running:
             self.running = True
-            self.health_check_task = asyncio.create_task(
-                self._health_check_loop())
+            self.health_check_task = asyncio.create_task(self._health_check_loop())
             logger.info("高可用管理器启动")
 
     async def stop(self):
@@ -84,7 +84,8 @@ class HighAvailabilityManager:
                 service_url = instance["url"]
                 is_healthy = await self._check_service_health(service_url)
                 service_discovery.update_service_health(
-                    service_name, service_url, is_healthy)
+                    service_name, service_url, is_healthy
+                )
 
     async def _check_service_health(self, service_url: str) -> bool:
         """检查服务健康状态
@@ -98,8 +99,7 @@ class HighAvailabilityManager:
         try:
             client = await http_client_manager.get_client(service_url)
             response = await asyncio.wait_for(
-                client.get("/health"),
-                timeout=self.health_check_timeout
+                client.get("/health"), timeout=self.health_check_timeout
             )
             return response.status_code == 200
         except Exception as e:
@@ -107,7 +107,8 @@ class HighAvailabilityManager:
             return False
 
     async def execute_with_failover(
-        self, service_name: str, method: str, endpoint: str, **kwargs) -> Optional[Any]:
+        self, service_name: str, method: str, endpoint: str, **kwargs
+    ) -> Optional[Any]:
         """执行带故障转移的服务调用
 
         Args:
@@ -152,12 +153,15 @@ class HighAvailabilityManager:
                     return response
                 else:
                     logger.warning(
-                        f"服务{service_name}返回错误状态码: {response.status_code}")
+                        f"服务{service_name}返回错误状态码: {response.status_code}"
+                    )
                     # 标记服务为不健康
                     service_discovery.update_service_health(
-                        service_name, service_url, False)
+                        service_name, service_url, False
+                    )
                     last_error = Exception(
-                        f"服务返回错误状态码: {response.status_code}")
+                        f"服务返回错误状态码: {response.status_code}"
+                    )
 
             except Exception as e:
                 logger.warning(f"服务{service_name}调用失败: {e}")
@@ -167,7 +171,8 @@ class HighAvailabilityManager:
             retries += 1
             if retries < self.service_retry_count:
                 logger.info(
-                    f"重试服务{service_name}调用 ({retries}/{self.service_retry_count})")
+                    f"重试服务{service_name}调用 ({retries}/{self.service_retry_count})"
+                )
                 await asyncio.sleep(self.service_retry_interval)
 
         # 所有重试都失败
@@ -213,15 +218,20 @@ class HighAvailabilityManager:
             availability[service_name] = {
                 "total_instances": stats["total_instances"],
                 "healthy_instances": stats["healthy_instances"],
-                "availability_rate": stats["healthy_instances"] / stats["total_instances"] if stats["total_instances"] > 0 else 0,
+                "availability_rate": (
+                    stats["healthy_instances"] / stats["total_instances"]
+                    if stats["total_instances"] > 0
+                    else 0
+                ),
                 "health_status": health,
-                "calls": stats["calls"]
+                "calls": stats["calls"],
             }
 
         return availability
 
     def register_service_instance(
-        self, service_name: str, service_url: str, weight: float = 1.0):
+        self, service_name: str, service_url: str, weight: float = 1.0
+    ):
         """注册服务实例
 
         Args:

@@ -5,10 +5,11 @@
 处理服务间的通信
 """
 
-import pika
 import json
 import logging
-from typing import Callable, Dict, Any
+from typing import Any, Callable, Dict
+
+import pika
 
 # 配置日志
 logging.basicConfig(
@@ -111,8 +112,7 @@ class MessageQueueManager:
             logger.error(f"发布消息失败: {e}")
             raise
 
-    def subscribe(self, queue_name: str,
-                  callback: Callable[[Dict[str, Any]], None]):
+    def subscribe(self, queue_name: str, callback: Callable[[Dict[str, Any]], None]):
         """订阅消息
 
         Args:

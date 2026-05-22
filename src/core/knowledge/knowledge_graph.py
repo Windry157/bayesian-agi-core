@@ -6,9 +6,9 @@
 """
 
 import logging
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Any
 import re
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
 # 配置日志
 logging.basicConfig(
@@ -40,8 +40,9 @@ class KnowledgeGraph:
 
         logger.info("知识图谱初始化完成")
 
-    async def add_entity(self, entity_id: str,
-                         entity_type: str, properties: Dict[str, Any]):
+    async def add_entity(
+        self, entity_id: str, entity_type: str, properties: Dict[str, Any]
+    ):
         """添加实体
 
         Args:
@@ -54,7 +55,7 @@ class KnowledgeGraph:
                 "type": entity_type,
                 "properties": properties,
                 "created_at": datetime.now().isoformat(),
-                "updated_at": datetime.now().isoformat()
+                "updated_at": datetime.now().isoformat(),
             }
 
             # 更新实体索引
@@ -66,10 +67,9 @@ class KnowledgeGraph:
             logger.info(f"添加实体: {entity_id} (类型: {entity_type})")
         else:
             # 更新现有实体
-            self.entities[entity_id].update({
-                "properties": properties,
-                "updated_at": datetime.now().isoformat()
-            })
+            self.entities[entity_id].update(
+                {"properties": properties, "updated_at": datetime.now().isoformat()}
+            )
             # 更新索引
             self._update_entity_index(entity_id, entity_type, properties)
             # 更新嵌入
@@ -77,8 +77,13 @@ class KnowledgeGraph:
 
             logger.info(f"更新实体: {entity_id}")
 
-    async def add_relation(self, subject: str, predicate: str,
-                           object_: str, properties: Dict[str, Any] = None):
+    async def add_relation(
+        self,
+        subject: str,
+        predicate: str,
+        object_: str,
+        properties: Dict[str, Any] = None,
+    ):
         """添加关系
 
         Args:
@@ -93,7 +98,7 @@ class KnowledgeGraph:
                 "predicate": predicate,
                 "object": object_,
                 "properties": properties or {},
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat(),
             }
 
             self.relations.append(relation)
@@ -107,7 +112,8 @@ class KnowledgeGraph:
             logger.info(f"添加关系: {subject} -[{predicate}]-> {object_}")
         else:
             logger.error(
-                f"无法添加关系，主体或客体实体不存在: {subject} -[{predicate}]-> {object_}")
+                f"无法添加关系，主体或客体实体不存在: {subject} -[{predicate}]-> {object_}"
+            )
 
     def get_entity(self, entity_id: str) -> Optional[Dict[str, Any]]:
         """获取实体
@@ -120,8 +126,9 @@ class KnowledgeGraph:
         """
         return self.entities.get(entity_id)
 
-    def get_relations(self, subject: str = None, predicate: str = None,
-                      object_: str = None) -> List[Dict[str, Any]]:
+    def get_relations(
+        self, subject: str = None, predicate: str = None, object_: str = None
+    ) -> List[Dict[str, Any]]:
         """获取关系
 
         Args:
@@ -146,7 +153,8 @@ class KnowledgeGraph:
         return result
 
     async def search_entities(
-        self, query: str, top_k: int = 5) -> List[Tuple[str, float]]:
+        self, query: str, top_k: int = 5
+    ) -> List[Tuple[str, float]]:
         """搜索实体
 
         Args:
@@ -185,7 +193,7 @@ class KnowledgeGraph:
         # 提取人物
         person_patterns = [
             r"(先生|女士|博士|教授)\s+([\u4e00-\u9fa5]{2,4})",
-            r"([\u4e00-\u9fa5]{2,4})\s+(先生|女士|博士|教授)"
+            r"([\u4e00-\u9fa5]{2,4})\s+(先生|女士|博士|教授)",
         ]
 
         for pattern in person_patterns:
@@ -198,9 +206,7 @@ class KnowledgeGraph:
                         entities.append((match.group(1), "person"))
 
         # 提取地点
-        location_patterns = [
-            r"(在|到|来自|前往)\s+([\u4e00-\u9fa5]{2,6})"
-        ]
+        location_patterns = [r"(在|到|来自|前往)\s+([\u4e00-\u9fa5]{2,6})"]
 
         for pattern in location_patterns:
             matches = re.finditer(pattern, text)
@@ -211,7 +217,7 @@ class KnowledgeGraph:
         # 提取组织
         organization_patterns = [
             r"(公司|大学|医院|机构|组织)\s+([\u4e00-\u9fa5]{2,10})",
-            r"([\u4e00-\u9fa5]{2,10})\s+(公司|大学|医院|机构|组织)"
+            r"([\u4e00-\u9fa5]{2,10})\s+(公司|大学|医院|机构|组织)",
         ]
 
         for pattern in organization_patterns:
@@ -226,7 +232,8 @@ class KnowledgeGraph:
         return entities
 
     async def extract_relations(
-        self, text: str, entities: List[Tuple[str, str]]) -> List[Tuple[str, str, str]]:
+        self, text: str, entities: List[Tuple[str, str]]
+    ) -> List[Tuple[str, str, str]]:
         """从文本中提取关系
 
         Args:
@@ -249,8 +256,9 @@ class KnowledgeGraph:
                     object_idx = text.find(object_)
 
                     if subject_idx < object_idx:
-                        between_text = text[subject_idx +
-                                            len(subject):object_idx].strip()
+                        between_text = text[
+                            subject_idx + len(subject) : object_idx
+                        ].strip()
 
                         # 识别关系类型
                         if "是" in between_text:
@@ -266,8 +274,9 @@ class KnowledgeGraph:
 
         return relations
 
-    def _update_entity_index(self, entity_id: str,
-                             entity_type: str, properties: Dict[str, Any]):
+    def _update_entity_index(
+        self, entity_id: str, entity_type: str, properties: Dict[str, Any]
+    ):
         """更新实体索引
 
         Args:
@@ -370,7 +379,8 @@ class KnowledgeGraph:
         return embedding
 
     def _calculate_similarity(
-        self, embedding1: List[float], embedding2: List[float]) -> float:
+        self, embedding1: List[float], embedding2: List[float]
+    ) -> float:
         """计算嵌入相似度
 
         Args:
@@ -403,7 +413,7 @@ class KnowledgeGraph:
             "entities_count": len(self.entities),
             "relations_count": len(self.relations),
             "entity_types_count": len(self.entity_index),
-            "relation_types_count": len(self.relation_index)
+            "relation_types_count": len(self.relation_index),
         }
 
     def clear(self):

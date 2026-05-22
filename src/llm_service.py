@@ -6,10 +6,12 @@ LLM Service
 """
 
 import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.utils.config import load_config
+
 from src.core.assistant import Assistant
+from src.utils.config import load_config
 
 # 配置日志
 logging.basicConfig(

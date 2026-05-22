@@ -6,8 +6,8 @@
 """
 
 import logging
-from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
 # 配置日志
 logging.basicConfig(
@@ -44,10 +44,7 @@ class MultiRegionManager:
             region_id: 区域ID
             config: 区域配置
         """
-        self.regions[region_id] = {
-            **config,
-            "created_at": datetime.now().isoformat()
-        }
+        self.regions[region_id] = {**config, "created_at": datetime.now().isoformat()}
 
         # 初始化区域服务实例
         self.region_services[region_id] = {}
@@ -56,7 +53,7 @@ class MultiRegionManager:
         self.region_health[region_id] = {
             "status": "healthy",
             "last_check": datetime.now().isoformat(),
-            "response_time": 0
+            "response_time": 0,
         }
 
         # 初始化区域流量统计
@@ -64,7 +61,7 @@ class MultiRegionManager:
             "requests_total": 0,
             "errors_total": 0,
             "request_rate": 0,
-            "error_rate": 0
+            "error_rate": 0,
         }
 
         logger.info(f"添加区域: {region_id}")
@@ -89,8 +86,9 @@ class MultiRegionManager:
 
         logger.info(f"删除区域: {region_id}")
 
-    def add_service_instance(self, region_id: str,
-                             service_name: str, instance_url: str):
+    def add_service_instance(
+        self, region_id: str, service_name: str, instance_url: str
+    ):
         """添加服务实例
 
         Args:
@@ -109,7 +107,8 @@ class MultiRegionManager:
             logger.info(f"添加服务实例: {region_id}/{service_name}/{instance_url}")
 
     def remove_service_instance(
-        self, region_id: str, service_name: str, instance_url: str):
+        self, region_id: str, service_name: str, instance_url: str
+    ):
         """删除服务实例
 
         Args:
@@ -117,13 +116,13 @@ class MultiRegionManager:
             service_name: 服务名称
             instance_url: 实例URL
         """
-        if region_id in self.region_services and service_name in self.region_services[
-            region_id]:
+        if (
+            region_id in self.region_services
+            and service_name in self.region_services[region_id]
+        ):
             if instance_url in self.region_services[region_id][service_name]:
-                self.region_services[region_id][service_name].remove(
-                    instance_url)
-                logger.info(
-                    f"删除服务实例: {region_id}/{service_name}/{instance_url}")
+                self.region_services[region_id][service_name].remove(instance_url)
+                logger.info(f"删除服务实例: {region_id}/{service_name}/{instance_url}")
 
     def add_routing_rule(self, rule: Dict[str, Any]):
         """添加路由规则
@@ -131,10 +130,7 @@ class MultiRegionManager:
         Args:
             rule: 路由规则
         """
-        self.routing_rules.append({
-            **rule,
-            "created_at": datetime.now().isoformat()
-        })
+        self.routing_rules.append({**rule, "created_at": datetime.now().isoformat()})
         logger.info(f"添加路由规则: {rule.get('name', 'unnamed')}")
 
     def remove_routing_rule(self, rule_name: str):
@@ -144,13 +140,11 @@ class MultiRegionManager:
             rule_name: 规则名称
         """
         self.routing_rules = [
-            rule for rule in self.routing_rules
-            if rule.get('name') != rule_name
+            rule for rule in self.routing_rules if rule.get("name") != rule_name
         ]
         logger.info(f"删除路由规则: {rule_name}")
 
-    def update_region_health(self, region_id: str,
-                             status: str, response_time: float):
+    def update_region_health(self, region_id: str, status: str, response_time: float):
         """更新区域健康状态
 
         Args:
@@ -159,16 +153,18 @@ class MultiRegionManager:
             response_time: 响应时间
         """
         if region_id in self.region_health:
-            self.region_health[region_id].update({
-                "status": status,
-                "last_check": datetime.now().isoformat(),
-                "response_time": response_time
-            })
+            self.region_health[region_id].update(
+                {
+                    "status": status,
+                    "last_check": datetime.now().isoformat(),
+                    "response_time": response_time,
+                }
+            )
         else:
             self.region_health[region_id] = {
                 "status": status,
                 "last_check": datetime.now().isoformat(),
-                "response_time": response_time
+                "response_time": response_time,
             }
 
     def record_region_traffic(self, region_id: str, success: bool):
@@ -183,7 +179,7 @@ class MultiRegionManager:
                 "requests_total": 0,
                 "errors_total": 0,
                 "request_rate": 0,
-                "error_rate": 0
+                "error_rate": 0,
             }
 
         self.region_traffic[region_id]["requests_total"] += 1
@@ -193,8 +189,9 @@ class MultiRegionManager:
         # 计算错误率
         total = self.region_traffic[region_id]["requests_total"]
         errors = self.region_traffic[region_id]["errors_total"]
-        self.region_traffic[region_id]["error_rate"] = errors / \
-            total if total > 0 else 0
+        self.region_traffic[region_id]["error_rate"] = (
+            errors / total if total > 0 else 0
+        )
 
     def get_region_config(self, region_id: str) -> Optional[Dict[str, Any]]:
         """获取区域配置
@@ -207,8 +204,7 @@ class MultiRegionManager:
         """
         return self.regions.get(region_id)
 
-    def get_service_instances(self, region_id: str,
-                              service_name: str) -> List[str]:
+    def get_service_instances(self, region_id: str, service_name: str) -> List[str]:
         """获取服务实例
 
         Args:
@@ -218,8 +214,10 @@ class MultiRegionManager:
         Returns:
             服务实例列表
         """
-        if region_id in self.region_services and service_name in self.region_services[
-            region_id]:
+        if (
+            region_id in self.region_services
+            and service_name in self.region_services[region_id]
+        ):
             return self.region_services[region_id][service_name]
         return []
 
@@ -273,17 +271,18 @@ class MultiRegionManager:
                     "config": self.regions.get(region_id),
                     "services": self.region_services.get(region_id, {}),
                     "health": self.region_health.get(region_id),
-                    "traffic": self.region_traffic.get(region_id)
+                    "traffic": self.region_traffic.get(region_id),
                 }
                 for region_id in self.regions
             },
             "routing_rules": self.routing_rules,
             "total_regions": len(self.regions),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
-    def route_request(self, service_name: str,
-                      user_location: Optional[str] = None) -> Optional[Tuple[str, str]]:
+    def route_request(
+        self, service_name: str, user_location: Optional[str] = None
+    ) -> Optional[Tuple[str, str]]:
         """路由请求
 
         Args:
@@ -295,37 +294,39 @@ class MultiRegionManager:
         """
         # 1. 应用路由规则
         for rule in self.routing_rules:
-            if rule.get('service') == service_name:
+            if rule.get("service") == service_name:
                 # 检查规则条件
-                if 'location' in rule and user_location:
-                    if rule['location'] != user_location:
+                if "location" in rule and user_location:
+                    if rule["location"] != user_location:
                         continue
 
                 # 选择区域
-                region_id = rule.get('region')
+                region_id = rule.get("region")
                 if region_id in self.regions:
                     # 检查区域健康状态
                     health = self.region_health.get(region_id, {})
-                    if health.get('status') == 'healthy':
+                    if health.get("status") == "healthy":
                         # 获取服务实例
-                        instances = self.get_service_instances(
-                            region_id, service_name)
+                        instances = self.get_service_instances(region_id, service_name)
                         if instances:
                             # 简单的轮询选择
                             import random
+
                             instance_url = random.choice(instances)
                             return region_id, instance_url
 
         # 2. 默认路由：选择健康的区域
         healthy_regions = [
-            region_id for region_id, health in self.region_health.items()
-            if health.get('status') == 'healthy'
+            region_id
+            for region_id, health in self.region_health.items()
+            if health.get("status") == "healthy"
         ]
 
         for region_id in healthy_regions:
             instances = self.get_service_instances(region_id, service_name)
             if instances:
                 import random
+
                 instance_url = random.choice(instances)
                 return region_id, instance_url
 
@@ -334,6 +335,7 @@ class MultiRegionManager:
             instances = self.get_service_instances(region_id, service_name)
             if instances:
                 import random
+
                 instance_url = random.choice(instances)
                 return region_id, instance_url
 

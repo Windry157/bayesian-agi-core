@@ -5,10 +5,10 @@
 负责根据系统负载动态调整服务实例的数量
 """
 
-import logging
 import asyncio
-from typing import Dict, List, Optional, Any
+import logging
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 # 配置日志
 logging.basicConfig(
@@ -87,7 +87,8 @@ class AutoScalingManager:
                 # 检查是否需要扩缩容
                 current_instances = self.service_instances.get(service_name, 1)
                 desired_instances = self._calculate_desired_instances(
-                    service_name, avg_load)
+                    service_name, avg_load
+                )
 
                 if desired_instances != current_instances:
                     await self._scale_service(service_name, desired_instances)
@@ -106,6 +107,7 @@ class AutoScalingManager:
         # 模拟负载获取
         # 实际应用中应该从监控系统获取真实负载
         import random
+
         return random.uniform(0.1, 1.0)
 
     def _record_load_history(self, service_name: str, load: float):
@@ -118,15 +120,15 @@ class AutoScalingManager:
         if service_name not in self.load_history:
             self.load_history[service_name] = []
 
-        self.load_history[service_name].append({
-            "timestamp": datetime.now().isoformat(),
-            "load": load
-        })
+        self.load_history[service_name].append(
+            {"timestamp": datetime.now().isoformat(), "load": load}
+        )
 
         # 保留最近10分钟的负载历史
         cutoff_time = datetime.now().timestamp() - 600
         self.load_history[service_name] = [
-            entry for entry in self.load_history[service_name]
+            entry
+            for entry in self.load_history[service_name]
             if datetime.fromisoformat(entry["timestamp"]).timestamp() > cutoff_time
         ]
 
@@ -145,8 +147,7 @@ class AutoScalingManager:
         loads = [entry["load"] for entry in self.load_history[service_name]]
         return sum(loads) / len(loads)
 
-    def _calculate_desired_instances(
-        self, service_name: str, avg_load: float) -> int:
+    def _calculate_desired_instances(self, service_name: str, avg_load: float) -> int:
         """计算期望的实例数
 
         Args:
@@ -162,8 +163,9 @@ class AutoScalingManager:
         target_load = config.get("target_load", 0.7)
 
         # 计算期望实例数
-        desired = max(min_instances, min(
-            max_instances, int(round(avg_load / target_load))))
+        desired = max(
+            min_instances, min(max_instances, int(round(avg_load / target_load)))
+        )
 
         return desired
 
@@ -179,25 +181,29 @@ class AutoScalingManager:
         if desired_instances > current_instances:
             # 扩容
             logger.info(
-                f"扩容服务 {service_name}: {current_instances} -> {desired_instances}")
+                f"扩容服务 {service_name}: {current_instances} -> {desired_instances}"
+            )
             # 实际应用中应该启动新的服务实例
         elif desired_instances < current_instances:
             # 缩容
             logger.info(
-                f"缩容服务 {service_name}: {current_instances} -> {desired_instances}")
+                f"缩容服务 {service_name}: {current_instances} -> {desired_instances}"
+            )
             # 实际应用中应该停止多余的服务实例
 
         # 更新实例数
         self.service_instances[service_name] = desired_instances
 
         # 记录扩缩容事件
-        self.scaling_events.append({
-            "timestamp": datetime.now().isoformat(),
-            "service": service_name,
-            "from_instances": current_instances,
-            "to_instances": desired_instances,
-            "reason": "auto_scaling"
-        })
+        self.scaling_events.append(
+            {
+                "timestamp": datetime.now().isoformat(),
+                "service": service_name,
+                "from_instances": current_instances,
+                "to_instances": desired_instances,
+                "reason": "auto_scaling",
+            }
+        )
 
         # 保留最近100个扩缩容事件
         if len(self.scaling_events) > 100:
@@ -215,21 +221,20 @@ class AutoScalingManager:
             "max_instances": 5,
             "target_load": 0.7,
             "scale_up_threshold": 0.8,
-            "scale_down_threshold": 0.4
+            "scale_down_threshold": 0.4,
         }
 
         self.scaling_configs[service_name] = {**default_config, **config}
 
         # 初始化实例数
         if service_name not in self.service_instances:
-            self.service_instances[service_name] = config.get(
-                "min_instances", 1)
+            self.service_instances[service_name] = config.get("min_instances", 1)
 
         logger.info(
-            f"设置服务{service_name}的扩缩容配置: {self.scaling_configs[service_name]}")
+            f"设置服务{service_name}的扩缩容配置: {self.scaling_configs[service_name]}"
+        )
 
-    def get_scaling_config(
-        self, service_name: str) -> Optional[Dict[str, Any]]:
+    def get_scaling_config(self, service_name: str) -> Optional[Dict[str, Any]]:
         """获取扩缩容配置
 
         Args:
@@ -281,14 +286,14 @@ class AutoScalingManager:
                 service: {
                     "config": self.scaling_configs.get(service),
                     "instances": self.service_instances.get(service, 1),
-                    "load_history": self.load_history.get(service, [])
+                    "load_history": self.load_history.get(service, []),
                 }
                 for service in self.scaling_configs
             },
             "scaling_events": self.scaling_events,
             "running": self.running,
             "check_interval": self.check_interval,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
     def set_check_interval(self, interval: int):

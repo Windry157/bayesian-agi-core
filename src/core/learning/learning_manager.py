@@ -5,10 +5,11 @@
 负责管理系统的自主学习过程
 """
 
-import logging
 import asyncio
+import logging
 from datetime import datetime
-from typing import List, Tuple, Dict, Any
+from typing import Any, Dict, List, Tuple
+
 from ..knowledge import knowledge_graph
 
 # 配置日志
@@ -101,16 +102,22 @@ class LearningManager:
             await knowledge_graph.add_entity(
                 entity_id=entity_id,
                 entity_type=entity_type,
-                properties={"name": entity_name, "source": "learning"}
+                properties={"name": entity_name, "source": "learning"},
             )
 
         # 提取关系
         if all_entities:
-            input_relations = await knowledge_graph.extract_relations(input_text, all_entities)
-            output_relations = await knowledge_graph.extract_relations(output_text, all_entities)
+            input_relations = await knowledge_graph.extract_relations(
+                input_text, all_entities
+            )
+            output_relations = await knowledge_graph.extract_relations(
+                output_text, all_entities
+            )
 
             # 添加关系到知识图谱
-            for subject_name, predicate, object_name in input_relations + output_relations:
+            for subject_name, predicate, object_name in (
+                input_relations + output_relations
+            ):
                 subject_id = f"{
     self._get_entity_type(
         subject_name,
@@ -123,15 +130,16 @@ class LearningManager:
                     subject=subject_id,
                     predicate=predicate,
                     object_=object_id,
-                    properties={"source": "learning"}
+                    properties={"source": "learning"},
                 )
 
         # 记录知识图谱统计信息
         stats = knowledge_graph.get_statistics()
         logger.info(f"知识图谱更新完成: {stats}")
 
-    def _get_entity_type(self, entity_name: str,
-                         entities: List[Tuple[str, str]]) -> str:
+    def _get_entity_type(
+        self, entity_name: str, entities: List[Tuple[str, str]]
+    ) -> str:
         """获取实体类型
 
         Args:
@@ -204,7 +212,8 @@ class LearningManager:
             logger.error(f"加载学习状态失败: {e}")
 
     async def initiate_learning(
-        self, topic: str, learning_type: str = "active", priority: str = "medium"):
+        self, topic: str, learning_type: str = "active", priority: str = "medium"
+    ):
         """启动学习
 
         Args:
@@ -224,7 +233,7 @@ class LearningManager:
                 "type": learning_type,
                 "priority": priority,
                 "timestamp": datetime.now().isoformat(),
-                "status": "started"
+                "status": "started",
             }
 
             self.learning_history.append(learning_record)
@@ -249,22 +258,28 @@ class LearningManager:
                 return {
                     "needs_improvement": False,
                     "efficiency_score": 0.5,
-                    "recommendations": ["需要更多学习数据进行分析"]
+                    "recommendations": ["需要更多学习数据进行分析"],
                 }
 
             # 简单的效率分析
             # 计算最近学习活动的成功率
-            recent_learning = self.learning_history[-10:] if len(
-                self.learning_history) >= 10 else self.learning_history
+            recent_learning = (
+                self.learning_history[-10:]
+                if len(self.learning_history) >= 10
+                else self.learning_history
+            )
 
             success_count = 0
             for record in recent_learning:
-                if record.get("status") == "completed" or record.get(
-                    "status") == "started":
+                if (
+                    record.get("status") == "completed"
+                    or record.get("status") == "started"
+                ):
                     success_count += 1
 
-            efficiency_score = success_count / \
-                len(recent_learning) if recent_learning else 0.0
+            efficiency_score = (
+                success_count / len(recent_learning) if recent_learning else 0.0
+            )
 
             needs_improvement = efficiency_score < 0.6
 
@@ -276,7 +291,7 @@ class LearningManager:
             return {
                 "needs_improvement": needs_improvement,
                 "efficiency_score": efficiency_score,
-                "recommendations": recommendations
+                "recommendations": recommendations,
             }
 
         except Exception as e:
@@ -284,7 +299,7 @@ class LearningManager:
             return {
                 "needs_improvement": True,
                 "efficiency_score": 0.0,
-                "recommendations": ["分析过程出错"]
+                "recommendations": ["分析过程出错"],
             }
 
     async def optimize_learning_strategy(self, recommendations: List[str]):
@@ -310,14 +325,16 @@ class LearningManager:
             optimization_record = {
                 "timestamp": datetime.now().isoformat(),
                 "recommendations": recommendations,
-                "learning_rate_after": self.learning_rate
+                "learning_rate_after": self.learning_rate,
             }
 
-            self.learning_history.append({
-                "timestamp": datetime.now().isoformat(),
-                "type": "optimization",
-                "optimization": optimization_record
-            })
+            self.learning_history.append(
+                {
+                    "timestamp": datetime.now().isoformat(),
+                    "type": "optimization",
+                    "optimization": optimization_record,
+                }
+            )
 
             logger.info("学习策略优化完成")
 
@@ -334,5 +351,9 @@ class LearningManager:
             "learning_history_count": len(self.learning_history),
             "learning_rate": self.learning_rate,
             "recent_learning_count": min(10, len(self.learning_history)),
-            "last_learning_time": self.learning_history[-1].get("timestamp") if self.learning_history else "N/A"
+            "last_learning_time": (
+                self.learning_history[-1].get("timestamp")
+                if self.learning_history
+                else "N/A"
+            ),
         }

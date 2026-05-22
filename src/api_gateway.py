@@ -5,23 +5,25 @@ API Gateway
 处理所有HTTP请求并路由到相应的微服务
 """
 
-import os
 import logging
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File
+import os
+from typing import Dict, Optional
+
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, Dict
-from src.utils.message_queue import message_queue_manager
-from src.utils.http_client import http_client_manager
+
+from src.core.consciousness import consciousness
+from src.core.monitoring import monitoring
+from src.core.uncertainty import feedback_collector
+from src.services import monitoring_service
+from src.utils.auto_scaling import auto_scaling_manager
 from src.utils.high_availability import high_availability_manager
+from src.utils.http_client import http_client_manager
+from src.utils.message_queue import message_queue_manager
+from src.utils.multi_region import multi_region_manager
 from src.utils.service_discovery import service_discovery
 from src.utils.service_mesh import service_mesh
-from src.utils.auto_scaling import auto_scaling_manager
-from src.utils.multi_region import multi_region_manager
-from src.core.monitoring import monitoring
-from src.services import monitoring_service
-from src.core.consciousness import consciousness
-from src.core.uncertainty import feedback_collector
 
 # 配置日志
 logging.basicConfig(
@@ -48,11 +50,9 @@ app.add_middleware(
 # 服务URLs
 LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://localhost:8001")
 MEMORY_SERVICE_URL = os.getenv("MEMORY_SERVICE_URL", "http://localhost:8002")
-COGNITION_SERVICE_URL = os.getenv(
-    "COGNITION_SERVICE_URL", "http://localhost:8003")
+COGNITION_SERVICE_URL = os.getenv("COGNITION_SERVICE_URL", "http://localhost:8003")
 VISION_SERVICE_URL = os.getenv("VISION_SERVICE_URL", "http://localhost:8004")
-MULTIMODAL_SERVICE_URL = os.getenv(
-    "MULTIMODAL_SERVICE_URL", "http://localhost:8005")
+MULTIMODAL_SERVICE_URL = os.getenv("MULTIMODAL_SERVICE_URL", "http://localhost:8005")
 
 
 # 定义请求模型
@@ -85,19 +85,22 @@ async def startup_event():
         "memory_service": MEMORY_SERVICE_URL,
         "cognition_service": COGNITION_SERVICE_URL,
         "vision_service": VISION_SERVICE_URL,
-        "multimodal_service": MULTIMODAL_SERVICE_URL
+        "multimodal_service": MULTIMODAL_SERVICE_URL,
     }
 
     for service_name, service_url in services.items():
         # 注册到服务发现
         service_discovery.register_service(service_name, service_url)
         # 注册到服务网格
-        service_mesh.register_service(service_name, {
-            "url": service_url,
-            "type": "http",
-            "version": "1.0",
-            "endpoints": ["/health", "/api"]
-        })
+        service_mesh.register_service(
+            service_name,
+            {
+                "url": service_url,
+                "type": "http",
+                "version": "1.0",
+                "endpoints": ["/health", "/api"],
+            },
+        )
 
     # 启动高可用管理器
     await high_availability_manager.start()
@@ -114,47 +117,54 @@ async def startup_event():
         # 继续启动，意识系统可能不是关键依赖
 
     # 为服务设置扩缩容配置
-    services = ["llm_service", "memory_service",
-                "cognition_service", "vision_service", "multimodal_service"]
+    services = [
+        "llm_service",
+        "memory_service",
+        "cognition_service",
+        "vision_service",
+        "multimodal_service",
+    ]
     for service in services:
-        auto_scaling_manager.set_scaling_config(service, {
-            "min_instances": 1,
-            "max_instances": 3,
-            "target_load": 0.6,
-            "scale_up_threshold": 0.8,
-            "scale_down_threshold": 0.4
-        })
+        auto_scaling_manager.set_scaling_config(
+            service,
+            {
+                "min_instances": 1,
+                "max_instances": 3,
+                "target_load": 0.6,
+                "scale_up_threshold": 0.8,
+                "scale_down_threshold": 0.4,
+            },
+        )
 
     # 启动自动扩缩容管理器
     await auto_scaling_manager.start()
 
     # 初始化多区域部署
     # 添加区域
-    multi_region_manager.add_region("region-1", {
-        "name": "Region 1",
-        "location": "us-east-1",
-        "priority": 1
-    })
+    multi_region_manager.add_region(
+        "region-1", {"name": "Region 1", "location": "us-east-1", "priority": 1}
+    )
 
-    multi_region_manager.add_region("region-2", {
-        "name": "Region 2",
-        "location": "us-west-1",
-        "priority": 2
-    })
+    multi_region_manager.add_region(
+        "region-2", {"name": "Region 2", "location": "us-west-1", "priority": 2}
+    )
 
-    multi_region_manager.add_region("region-3", {
-        "name": "Region 3",
-        "location": "eu-west-1",
-        "priority": 3
-    })
+    multi_region_manager.add_region(
+        "region-3", {"name": "Region 3", "location": "eu-west-1", "priority": 3}
+    )
 
     # 为每个区域添加服务实例
-    services = ["llm_service", "memory_service",
-                "cognition_service", "vision_service", "multimodal_service"]
+    services = [
+        "llm_service",
+        "memory_service",
+        "cognition_service",
+        "vision_service",
+        "multimodal_service",
+    ]
     base_urls = {
         "region-1": "http://localhost:8001",
         "region-2": "http://localhost:8002",
-        "region-3": "http://localhost:8003"
+        "region-3": "http://localhost:8003",
     }
 
     for region_id, base_url in base_urls.items():
@@ -162,22 +172,27 @@ async def startup_event():
             # 为每个服务添加实例
             instance_url = f"{base_url}/{service_name}"
             multi_region_manager.add_service_instance(
-                region_id, service_name, instance_url)
+                region_id, service_name, instance_url
+            )
 
     # 添加路由规则
-    multi_region_manager.add_routing_rule({
-        "name": "us-east-1-rule",
-        "service": "llm_service",
-        "region": "region-1",
-        "location": "us-east"
-    })
+    multi_region_manager.add_routing_rule(
+        {
+            "name": "us-east-1-rule",
+            "service": "llm_service",
+            "region": "region-1",
+            "location": "us-east",
+        }
+    )
 
-    multi_region_manager.add_routing_rule({
-        "name": "us-west-1-rule",
-        "service": "memory_service",
-        "region": "region-2",
-        "location": "us-west"
-    })
+    multi_region_manager.add_routing_rule(
+        {
+            "name": "us-west-1-rule",
+            "service": "memory_service",
+            "region": "region-2",
+            "location": "us-west",
+        }
+    )
 
     logger.info("API Gateway启动成功")
 
@@ -239,8 +254,7 @@ async def get_models():
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 # 代理到记忆服务
@@ -268,8 +282,7 @@ async def add_memory(req: MemoryRequest):
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 @app.get("/api/memory/search")
@@ -277,12 +290,14 @@ async def search_memory(query: str, top_k: int = 5):
     """检索记忆"""
     try:
         response = await high_availability_manager.execute_with_failover(
-            "memory_service", "GET", "/api/memory/search", params={"query": query, "top_k": top_k}
+            "memory_service",
+            "GET",
+            "/api/memory/search",
+            params={"query": query, "top_k": top_k},
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 # 代理到认知服务
@@ -296,8 +311,8 @@ async def make_decision(request: Request):
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
+
 
 # 持续上下文处理
 
@@ -310,17 +325,18 @@ async def process_with_context(request: Request):
     session_id = data.get("session_id")
 
     if not input_text or not session_id:
-        raise HTTPException(
-            status_code=400, detail="Missing input or session_id")
+        raise HTTPException(status_code=400, detail="Missing input or session_id")
 
     try:
         # 从assistant实例获取处理结果
         from src.core.assistant import Assistant
+
         assistant = Assistant()
         result = await assistant.process_with_context(input_text, session_id)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Process failed: {e}")
+
 
 # 自我完善循环
 
@@ -330,12 +346,13 @@ async def self_improvement():
     """触发自我完善循环"""
     try:
         from src.core.assistant import Assistant
+
         assistant = Assistant()
         result = await assistant.self_improvement_cycle()
         return result
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Self improvement failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Self improvement failed: {e}")
+
 
 # 生成学习目标
 
@@ -345,12 +362,13 @@ async def generate_learning_goals():
     """生成学习目标"""
     try:
         from src.core.assistant import Assistant
+
         assistant = Assistant()
         goals = await assistant.generate_learning_goals()
         return {"goals": goals}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Goal generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Goal generation failed: {e}")
+
 
 # 启动自主学习
 
@@ -360,12 +378,13 @@ async def start_autonomous_learning():
     """启动自主学习"""
     try:
         from src.core.assistant import Assistant
+
         assistant = Assistant()
         success = await assistant.start_autonomous_learning()
         return {"success": success, "message": "Autonomous learning started"}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to start learning: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to start learning: {e}")
+
 
 # 获取系统健康状态
 
@@ -375,12 +394,12 @@ async def get_system_health():
     """获取系统健康状态"""
     try:
         from src.core.assistant import Assistant
+
         assistant = Assistant()
         health = assistant.get_system_health()
         return health
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Health check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Health check failed: {e}")
 
 
 # 意识系统端点
@@ -389,13 +408,13 @@ async def process_consciousness(req: ConsciousnessRequest):
     """处理连续思维"""
     try:
         result = await consciousness.process_thought(
-            input_text=req.input,
-            session_id=req.session_id
+            input_text=req.input, session_id=req.session_id
         )
         return result
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Consciousness processing failed: {e}")
+            status_code=500, detail=f"Consciousness processing failed: {e}"
+        )
 
 
 @app.get("/api/consciousness/status")
@@ -406,7 +425,8 @@ async def get_consciousness_status():
         return status
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get consciousness status: {e}")
+            status_code=500, detail=f"Failed to get consciousness status: {e}"
+        )
 
 
 @app.post("/api/consciousness/evolve")
@@ -442,8 +462,7 @@ async def classify_image(file: UploadFile = File(...)):
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 @app.post("/api/vision/detect")
@@ -456,8 +475,7 @@ async def detect_objects(file: UploadFile = File(...)):
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 @app.post("/api/vision/describe")
@@ -470,8 +488,7 @@ async def describe_image(file: UploadFile = File(...)):
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 # 代理到多模态服务
@@ -485,8 +502,7 @@ async def process_text(request: Request):
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 @app.post("/api/multimodal/image")
@@ -496,12 +512,15 @@ async def process_image(request: Request, file: UploadFile = File(...)):
         form_data = await request.form()
         files = {"file": (file.filename, await file.read(), file.content_type)}
         response = await high_availability_manager.execute_with_failover(
-            "multimodal_service", "POST", "/api/multimodal/image", data=form_data, files=files
+            "multimodal_service",
+            "POST",
+            "/api/multimodal/image",
+            data=form_data,
+            files=files,
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 @app.post("/api/multimodal/audio")
@@ -511,12 +530,15 @@ async def process_audio(request: Request, file: UploadFile = File(...)):
         form_data = await request.form()
         files = {"file": (file.filename, await file.read(), file.content_type)}
         response = await high_availability_manager.execute_with_failover(
-            "multimodal_service", "POST", "/api/multimodal/audio", data=form_data, files=files
+            "multimodal_service",
+            "POST",
+            "/api/multimodal/audio",
+            data=form_data,
+            files=files,
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 @app.get("/api/multimodal/supported-input-types")
@@ -528,8 +550,7 @@ async def get_supported_input_types():
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 @app.get("/api/multimodal/supported-tasks")
@@ -541,8 +562,7 @@ async def get_supported_tasks():
         )
         return response.json()
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Service call failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Service call failed: {e}")
 
 
 # 根路径
@@ -564,8 +584,8 @@ async def get_system_status():
         status = await monitoring_service.get_system_status()
         return status
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get system status: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get system status: {e}")
+
 
 # 服务健康状态端点
 
@@ -578,7 +598,9 @@ async def get_service_health():
         return availability
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get service health: {e}")
+            status_code=500, detail=f"Failed to get service health: {e}"
+        )
+
 
 # 服务网格状态端点
 
@@ -591,7 +613,9 @@ async def get_service_mesh_status():
         return status
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get service mesh status: {e}")
+            status_code=500, detail=f"Failed to get service mesh status: {e}"
+        )
+
 
 # 服务网格服务列表端点
 
@@ -603,8 +627,8 @@ async def get_service_mesh_services():
         services = service_mesh.get_all_services()
         return services
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get services: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get services: {e}")
+
 
 # 服务网格流量规则端点
 
@@ -616,8 +640,8 @@ async def get_service_mesh_traffic_rules():
         rules = service_mesh.get_all_traffic_rules()
         return rules
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get traffic rules: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get traffic rules: {e}")
+
 
 # 服务网格安全策略端点
 
@@ -630,7 +654,9 @@ async def get_service_mesh_security_policies():
         return policies
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get security policies: {e}")
+            status_code=500, detail=f"Failed to get security policies: {e}"
+        )
+
 
 # 自动扩缩容状态端点
 
@@ -643,7 +669,9 @@ async def get_auto_scaling_status():
         return status
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get auto scaling status: {e}")
+            status_code=500, detail=f"Failed to get auto scaling status: {e}"
+        )
+
 
 # 自动扩缩容配置端点
 
@@ -655,13 +683,16 @@ async def get_auto_scaling_config(service_name: str):
         config = auto_scaling_manager.get_scaling_config(service_name)
         if not config:
             raise HTTPException(
-                status_code=404, detail=f"Service {service_name} not found")
+                status_code=404, detail=f"Service {service_name} not found"
+            )
         return config
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get auto scaling config: {e}")
+            status_code=500, detail=f"Failed to get auto scaling config: {e}"
+        )
+
 
 # 自动扩缩容事件端点
 
@@ -674,7 +705,9 @@ async def get_auto_scaling_events():
         return events
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get auto scaling events: {e}")
+            status_code=500, detail=f"Failed to get auto scaling events: {e}"
+        )
+
 
 # 多区域部署状态端点
 
@@ -687,7 +720,9 @@ async def get_multi_region_status():
         return status
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get multi-region status: {e}")
+            status_code=500, detail=f"Failed to get multi-region status: {e}"
+        )
+
 
 # 多区域部署区域列表端点
 
@@ -699,8 +734,8 @@ async def get_multi_region_regions():
         regions = multi_region_manager.get_all_regions()
         return regions
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get regions: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get regions: {e}")
+
 
 # 多区域部署路由规则端点
 
@@ -712,14 +747,15 @@ async def get_multi_region_routing_rules():
         rules = multi_region_manager.get_all_routing_rules()
         return rules
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get routing rules: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get routing rules: {e}")
+
 
 # 反馈收集端点
 
 
 class FeedbackRequest(BaseModel):
     """反馈请求模型"""
+
     session_id: str
     input_text: str
     system_response: Dict
@@ -740,12 +776,11 @@ async def submit_feedback(request: FeedbackRequest):
             feedback_type=request.feedback_type,
             feedback_details=request.feedback_details,
             confidence_score=request.confidence_score,
-            user_correction=request.user_correction
+            user_correction=request.user_correction,
         )
         return result
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to submit feedback: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to submit feedback: {e}")
 
 
 @app.get("/api/feedback/stats")
@@ -756,7 +791,9 @@ async def get_feedback_stats():
         return stats
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get feedback stats: {e}")
+            status_code=500, detail=f"Failed to get feedback stats: {e}"
+        )
+
 
 # Prometheus指标端点
 

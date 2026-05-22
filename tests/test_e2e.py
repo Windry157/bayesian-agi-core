@@ -7,6 +7,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
+
 from src.api_gateway import app
 from src.core.assistant import Assistant
 
@@ -38,16 +39,19 @@ class TestE2E:
         test_prompt = "计划一个周末去西雅图的旅行，重点关注历史景点，并提供预算明细"
 
         # 1. 初始化上下文
-        await assistant.context_bridge.update_session_context(test_session_id, {
-            "messages": [],
-            "metadata": {"topic": "trip planning", "location": "Seattle"}
-        })
+        await assistant.context_bridge.update_session_context(
+            test_session_id,
+            {
+                "messages": [],
+                "metadata": {"topic": "trip planning", "location": "Seattle"},
+            },
+        )
 
         # 2. 处理请求
-        response = client.post("/api/context/process", json={
-            "input": test_prompt,
-            "session_id": test_session_id
-        })
+        response = client.post(
+            "/api/context/process",
+            json={"input": test_prompt, "session_id": test_session_id},
+        )
 
         # 3. 验证响应
         assert response.status_code == 200
@@ -89,10 +93,13 @@ class TestE2E:
 
         try:
             # 3. 处理请求
-            response = client.post("/api/context/process", json={
-                "input": "请告诉我关于人工智能的最新进展",
-                "session_id": test_session_id
-            })
+            response = client.post(
+                "/api/context/process",
+                json={
+                    "input": "请告诉我关于人工智能的最新进展",
+                    "session_id": test_session_id,
+                },
+            )
 
             # 4. 验证系统能够优雅处理故障
             assert response.status_code == 200
@@ -116,20 +123,20 @@ class TestE2E:
         # 1. 初始请求：设置约束
         initial_prompt = "我计划下个月去日本旅行，预算有限，喜欢历史和美食"
 
-        response1 = client.post("/api/context/process", json={
-            "input": initial_prompt,
-            "session_id": test_session_id
-        })
+        response1 = client.post(
+            "/api/context/process",
+            json={"input": initial_prompt, "session_id": test_session_id},
+        )
 
         assert response1.status_code == 200
 
         # 2. 后续请求：依赖初始约束
         follow_up_prompt = "推荐一些东京的历史景点"
 
-        response2 = client.post("/api/context/process", json={
-            "input": follow_up_prompt,
-            "session_id": test_session_id
-        })
+        response2 = client.post(
+            "/api/context/process",
+            json={"input": follow_up_prompt, "session_id": test_session_id},
+        )
 
         assert response2.status_code == 200
         result2 = response2.json()
@@ -142,10 +149,10 @@ class TestE2E:
         # 4. 再次测试，确保上下文保持
         second_follow_up = "这些景点的大致费用是多少？"
 
-        response3 = client.post("/api/context/process", json={
-            "input": second_follow_up,
-            "session_id": test_session_id
-        })
+        response3 = client.post(
+            "/api/context/process",
+            json={"input": second_follow_up, "session_id": test_session_id},
+        )
 
         assert response3.status_code == 200
         result3 = response3.json()

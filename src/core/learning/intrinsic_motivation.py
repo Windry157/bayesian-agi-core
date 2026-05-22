@@ -5,10 +5,10 @@
 驱动主动学习的核心引擎
 """
 
-import logging
 import asyncio
+import logging
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 # 配置日志
 logging.basicConfig(
@@ -50,7 +50,7 @@ class LearningGoal:
             "description": self.description,
             "created_at": self.created_at,
             "status": self.status,
-            "progress": self.progress
+            "progress": self.progress,
         }
 
 
@@ -87,7 +87,7 @@ class CuriosityModule:
             curiosity_record = {
                 "timestamp": datetime.now().isoformat(),
                 "score": curiosity_score,
-                "knowledge_gaps": knowledge_gaps
+                "knowledge_gaps": knowledge_gaps,
             }
             self.curiosity_history.append(curiosity_record)
 
@@ -112,11 +112,12 @@ class CuriosityModule:
         return {
             "domains": ["general_knowledge", "technology", "science"],
             "concepts": 1000,  # 模拟概念数量
-            "confidence": 0.7  # 模拟知识自信度
+            "confidence": 0.7,  # 模拟知识自信度
         }
 
     async def _identify_knowledge_gaps(
-        self, knowledge: Dict[str, Any]) -> List[Dict[str, Any]]:
+        self, knowledge: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """识别知识差距
 
         Args:
@@ -129,38 +130,43 @@ class CuriosityModule:
         knowledge_gaps = []
 
         # 检查领域覆盖
-        expected_domains = ["general_knowledge", "technology",
-                            "science", "art", "history", "philosophy"]
+        expected_domains = [
+            "general_knowledge",
+            "technology",
+            "science",
+            "art",
+            "history",
+            "philosophy",
+        ]
         current_domains = knowledge.get("domains", [])
 
         for domain in expected_domains:
             if domain not in current_domains:
-                knowledge_gaps.append({
-                    "domain": domain,
-                    "severity": 0.8,
-                    "description": f"缺少{domain}领域的知识"
-                })
+                knowledge_gaps.append(
+                    {
+                        "domain": domain,
+                        "severity": 0.8,
+                        "description": f"缺少{domain}领域的知识",
+                    }
+                )
 
         # 检查概念数量
         if knowledge.get("concepts", 0) < 1500:
-            knowledge_gaps.append({
-                "domain": "general",
-                "severity": 0.5,
-                "description": "概念数量不足"
-            })
+            knowledge_gaps.append(
+                {"domain": "general", "severity": 0.5, "description": "概念数量不足"}
+            )
 
         # 检查知识自信度
         if knowledge.get("confidence", 0) < 0.8:
-            knowledge_gaps.append({
-                "domain": "general",
-                "severity": 0.6,
-                "description": "知识自信度不足"
-            })
+            knowledge_gaps.append(
+                {"domain": "general", "severity": 0.6, "description": "知识自信度不足"}
+            )
 
         return knowledge_gaps
 
     async def _calculate_curiosity_score(
-        self, knowledge_gaps: List[Dict[str, Any]]) -> float:
+        self, knowledge_gaps: List[Dict[str, Any]]
+    ) -> float:
         """计算好奇心分数
 
         Args:
@@ -178,6 +184,7 @@ class CuriosityModule:
 
         # 好奇心分数 = 平均严重程度 * 知识差距数量的平方根
         import math
+
         curiosity_score = average_severity * math.sqrt(len(knowledge_gaps))
 
         # 归一化到 0-1 范围
@@ -222,7 +229,7 @@ class CompetenceGapDetector:
             competence_record = {
                 "timestamp": datetime.now().isoformat(),
                 "competence": current_competence,
-                "gaps": gaps
+                "gaps": gaps,
             }
             self.competence_history.append(competence_record)
 
@@ -250,11 +257,12 @@ class CompetenceGapDetector:
             "language_understanding": 0.85,
             "problem_solving": 0.65,
             "creativity": 0.6,
-            "learning_speed": 0.75
+            "learning_speed": 0.75,
         }
 
     async def _identify_competence_gaps(
-        self, competence: Dict[str, float]) -> List[Dict[str, Any]]:
+        self, competence: Dict[str, float]
+    ) -> List[Dict[str, Any]]:
         """识别能力差距
 
         Args:
@@ -272,21 +280,22 @@ class CompetenceGapDetector:
             "language_understanding": 0.9,
             "problem_solving": 0.8,
             "creativity": 0.75,
-            "learning_speed": 0.85
+            "learning_speed": 0.85,
         }
 
         # 识别差距
         for skill, current_level in competence.items():
             expected_level = expected_competence.get(skill, 0.8)
             if current_level < expected_level:
-                gap_severity = (expected_level -
-                                current_level) / expected_level
-                gaps.append({
-                    "skill": skill,
-                    "severity": gap_severity,
-                    "current_level": current_level,
-                    "expected_level": expected_level
-                })
+                gap_severity = (expected_level - current_level) / expected_level
+                gaps.append(
+                    {
+                        "skill": skill,
+                        "severity": gap_severity,
+                        "current_level": current_level,
+                        "expected_level": expected_level,
+                    }
+                )
 
         return gaps
 
@@ -328,7 +337,7 @@ class KnowledgeFrontierTracker:
             # 记录边界识别
             frontier_record = {
                 "timestamp": datetime.now().isoformat(),
-                "frontiers": frontiers
+                "frontiers": frontiers,
             }
             self.frontier_history.append(frontier_record)
 
@@ -352,16 +361,13 @@ class KnowledgeFrontierTracker:
         # 简化实现
         return {
             "domains": ["general_knowledge", "technology", "science"],
-            "concepts": {
-                "general_knowledge": 500,
-                "technology": 300,
-                "science": 200
-            },
-            "connections": 1500
+            "concepts": {"general_knowledge": 500, "technology": 300, "science": 200},
+            "connections": 1500,
         }
 
     async def _detect_knowledge_frontiers(
-        self, knowledge_state: Dict[str, Any]) -> List[Dict[str, Any]]:
+        self, knowledge_state: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """检测知识边界
 
         Args:
@@ -374,39 +380,43 @@ class KnowledgeFrontierTracker:
 
         # 分析领域覆盖
         existing_domains = knowledge_state.get("domains", [])
-        potential_domains = ["art", "history",
-                             "philosophy", "psychology", "sociology"]
+        potential_domains = ["art", "history", "philosophy", "psychology", "sociology"]
 
         for domain in potential_domains:
             if domain not in existing_domains:
-                frontiers.append({
-                    "domain": domain,
-                    "potential_value": 0.8,
-                    "description": f"未探索的{domain}领域"
-                })
+                frontiers.append(
+                    {
+                        "domain": domain,
+                        "potential_value": 0.8,
+                        "description": f"未探索的{domain}领域",
+                    }
+                )
 
         # 分析概念密度
         concepts = knowledge_state.get("concepts", {})
         for domain, count in concepts.items():
             if count < 400:
-                frontiers.append({
-                    "domain": domain,
-                    "potential_value": 0.6,
-                    "description": f"{domain}领域概念不足"
-                })
+                frontiers.append(
+                    {
+                        "domain": domain,
+                        "potential_value": 0.6,
+                        "description": f"{domain}领域概念不足",
+                    }
+                )
 
         # 分析连接密度
         connections = knowledge_state.get("connections", 0)
         total_concepts = sum(concepts.values())
         if total_concepts > 0:
-            connection_density = connections / \
-                (total_concepts * (total_concepts - 1))
+            connection_density = connections / (total_concepts * (total_concepts - 1))
             if connection_density < 0.001:
-                frontiers.append({
-                    "domain": "general",
-                    "potential_value": 0.7,
-                    "description": "知识连接密度低"
-                })
+                frontiers.append(
+                    {
+                        "domain": "general",
+                        "potential_value": 0.7,
+                        "description": "知识连接密度低",
+                    }
+                )
 
         return frontiers
 
@@ -449,7 +459,7 @@ class LearningOrchestrator:
             plan_record = {
                 "timestamp": datetime.now().isoformat(),
                 "motivation": motivation,
-                "plan": plan
+                "plan": plan,
             }
             self.learning_history.append(plan_record)
 
@@ -465,7 +475,8 @@ class LearningOrchestrator:
             return {"error": str(e)}
 
     async def _generate_plan_based_on_motivation(
-        self, motivation: float) -> Dict[str, Any]:
+        self, motivation: float
+    ) -> Dict[str, Any]:
         """基于动机水平生成计划
 
         Args:
@@ -478,34 +489,22 @@ class LearningOrchestrator:
             # 低动机：维护性学习
             return {
                 "type": "maintenance",
-                "activities": [
-                    "复习现有知识",
-                    "巩固基础概念",
-                    "优化现有技能"
-                ],
-                "time_estimate": "1小时"
+                "activities": ["复习现有知识", "巩固基础概念", "优化现有技能"],
+                "time_estimate": "1小时",
             }
         elif motivation < 0.7:
             # 中等动机：拓展性学习
             return {
                 "type": "expansion",
-                "activities": [
-                    "学习新领域基础",
-                    "探索相关概念",
-                    "练习新技能"
-                ],
-                "time_estimate": "2-3小时"
+                "activities": ["学习新领域基础", "探索相关概念", "练习新技能"],
+                "time_estimate": "2-3小时",
             }
         else:
             # 高动机：深度探索
             return {
                 "type": "deep_exploration",
-                "activities": [
-                    "深入研究前沿领域",
-                    "开发新的认知模型",
-                    "创造新知识"
-                ],
-                "time_estimate": "4-6小时"
+                "activities": ["深入研究前沿领域", "开发新的认知模型", "创造新知识"],
+                "time_estimate": "4-6小时",
             }
 
     async def execute_learning(self, plan: Dict[str, Any]) -> Dict[str, Any]:
@@ -526,7 +525,7 @@ class LearningOrchestrator:
                 "timestamp": datetime.now().isoformat(),
                 "plan": plan,
                 "knowledge": knowledge,
-                "success": True
+                "success": True,
             }
 
             logger.info("学习计划执行完成")
@@ -537,7 +536,8 @@ class LearningOrchestrator:
             return {"error": str(e)}
 
     async def _execute_learning_activities(
-        self, plan: Dict[str, Any]) -> Dict[str, Any]:
+        self, plan: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """执行学习活动
 
         Args:
@@ -556,7 +556,7 @@ class LearningOrchestrator:
         knowledge = {
             "acquired_concepts": len(activities) * 10,  # 每个活动获得10个概念
             "strengthened_skills": activities,
-            "new_connections": len(activities) * 5  # 每个活动建立5个连接
+            "new_connections": len(activities) * 5,  # 每个活动建立5个连接
         }
 
         return knowledge
@@ -596,7 +596,7 @@ class KnowledgeIntegrator:
             integration_record = {
                 "timestamp": datetime.now().isoformat(),
                 "knowledge": knowledge,
-                "result": integration_result
+                "result": integration_result,
             }
             self.integration_history.append(integration_record)
 
@@ -609,8 +609,7 @@ class KnowledgeIntegrator:
         except Exception as e:
             logger.error(f"知识整合失败: {e}")
 
-    async def _integrate_knowledge(
-        self, knowledge: Dict[str, Any]) -> Dict[str, Any]:
+    async def _integrate_knowledge(self, knowledge: Dict[str, Any]) -> Dict[str, Any]:
         """整合知识
 
         Args:
@@ -626,7 +625,7 @@ class KnowledgeIntegrator:
             "concepts_integrated": knowledge.get("acquired_concepts", 0),
             "skills_strengthened": len(knowledge.get("strengthened_skills", [])),
             "connections_established": knowledge.get("new_connections", 0),
-            "integration_success": True
+            "integration_success": True,
         }
 
     def get_integration_history(self) -> List[Dict[str, Any]]:
@@ -665,33 +664,38 @@ class IntrinsicMotivationSystem:
 
             # 好奇心驱动学习
             if curiosity_score := await self.curiosity_module.assess_curiosity():
-                goals.append(LearningGoal(
-                    type="exploration",
-                    priority=curiosity_score,
-                    description="探索未知领域"
-                ))
+                goals.append(
+                    LearningGoal(
+                        type="exploration",
+                        priority=curiosity_score,
+                        description="探索未知领域",
+                    )
+                )
 
             # 能力差距驱动学习
             if gaps := await self.competence_gap_detector.detect_gaps():
                 for gap in gaps:
-                    goals.append(LearningGoal(
-                        type="skill_improvement",
-                        priority=gap["severity"],
-                        description=f"提升{gap['skill']}能力"
-                    ))
+                    goals.append(
+                        LearningGoal(
+                            type="skill_improvement",
+                            priority=gap["severity"],
+                            description=f"提升{gap['skill']}能力",
+                        )
+                    )
 
             # 知识边界扩展
             if frontiers := await self.knowledge_frontier_tracker.identify_frontiers():
                 for frontier in frontiers:
-                    goals.append(LearningGoal(
-                        type="knowledge_expansion",
-                        priority=frontier["potential_value"],
-                        description=f"扩展{frontier['domain']}知识"
-                    ))
+                    goals.append(
+                        LearningGoal(
+                            type="knowledge_expansion",
+                            priority=frontier["potential_value"],
+                            description=f"扩展{frontier['domain']}知识",
+                        )
+                    )
 
             # 按优先级排序
-            sorted_goals = sorted(
-                goals, key=lambda g: g.priority, reverse=True)
+            sorted_goals = sorted(goals, key=lambda g: g.priority, reverse=True)
 
             logger.info(f"生成学习目标完成: {len(sorted_goals)} 个目标")
             return sorted_goals
@@ -713,10 +717,14 @@ class IntrinsicMotivationSystem:
                 if high_priority_goals:
                     # 3. 为每个高优先级目标创建学习计划
                     for goal in high_priority_goals:
-                        plan = await self.learning_orchestrator.create_learning_plan(goal.priority)
+                        plan = await self.learning_orchestrator.create_learning_plan(
+                            goal.priority
+                        )
 
                         # 4. 执行学习计划
-                        knowledge = await self.learning_orchestrator.execute_learning(plan)
+                        knowledge = await self.learning_orchestrator.execute_learning(
+                            plan
+                        )
 
                         # 5. 整合知识
                         await self.knowledge_integrator.integrate(knowledge)
@@ -742,17 +750,23 @@ class IntrinsicMotivationSystem:
                 "history_count": len(self.curiosity_module.get_curiosity_history())
             },
             "competence_gap_detector": {
-                "history_count": len(self.competence_gap_detector.get_competence_history())
+                "history_count": len(
+                    self.competence_gap_detector.get_competence_history()
+                )
             },
             "knowledge_frontier_tracker": {
-                "history_count": len(self.knowledge_frontier_tracker.get_frontier_history())
+                "history_count": len(
+                    self.knowledge_frontier_tracker.get_frontier_history()
+                )
             },
             "learning_orchestrator": {
                 "history_count": len(self.learning_orchestrator.get_learning_history())
             },
             "knowledge_integrator": {
-                "history_count": len(self.knowledge_integrator.get_integration_history())
-            }
+                "history_count": len(
+                    self.knowledge_integrator.get_integration_history()
+                )
+            },
         }
 
 

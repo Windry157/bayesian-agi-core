@@ -6,13 +6,15 @@ FastAPI应用主入口
 
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Body
+from pathlib import Path
+
+from fastapi import Body, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-from pathlib import Path
-from src.utils.config import load_config
+
 from src.core.assistant import Assistant
+from src.utils.config import load_config
 
 # 配置日志
 logging.basicConfig(
@@ -128,8 +130,7 @@ async def add_memory(content: str = Body(...), metadata: dict = None):
         memory_id = await assistant.add_memory(content, metadata)
         return {"id": memory_id, "message": "Memory added successfully"}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to add memory: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to add memory: {e}")
 
 
 # 检索记忆
@@ -140,8 +141,7 @@ async def search_memory(query: str, top_k: int = 5):
         memories = await assistant.retrieve_memories(query, top_k)
         return {"memories": memories}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to search memory: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to search memory: {e}")
 
 
 # 决策接口
@@ -152,8 +152,7 @@ async def make_decision(possible_actions: list = Body(...)):
         decision = assistant.make_decision(possible_actions)
         return {"decision": decision}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to make decision: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to make decision: {e}")
 
 
 # 根路径
@@ -196,5 +195,4 @@ if __name__ == "__main__":
     port = server_config.get("port", 8000)
     workers = server_config.get("workers", 4)
 
-    uvicorn.run("src.main:app", host=host, port=port,
-                workers=workers, reload=True)
+    uvicorn.run("src.main:app", host=host, port=port, workers=workers, reload=True)

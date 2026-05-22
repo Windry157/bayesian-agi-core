@@ -6,10 +6,10 @@
 """
 
 import logging
-from typing import Dict, List, Optional, Any, Callable
-from datetime import datetime
-from collections import defaultdict
 import statistics
+from collections import defaultdict
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 
 # 配置日志
 logging.basicConfig(
@@ -26,7 +26,7 @@ class AlertRule:
         name: str,
         condition: Callable[[Dict[str, Any]], bool],
         severity: str = "warning",
-        message_template: str = None
+        message_template: str = None,
     ):
         self.name = name
         self.condition = condition
@@ -73,42 +73,52 @@ class ConfidenceMonitor:
 
     def _setup_default_rules(self):
         """设置默认告警规则"""
-        self.add_alert_rule(AlertRule(
-            name="high_confidence_drift",
-            condition=lambda m: m.get("avg_confidence", 0.5) > 0.9 and m.get(
-                "drift_detected", False),
-            severity="warning",
-            message_template="检测到置信度漂移: 平均置信度 {avg_confidence:.2f} 异常偏高"
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="high_confidence_drift",
+                condition=lambda m: m.get("avg_confidence", 0.5) > 0.9
+                and m.get("drift_detected", False),
+                severity="warning",
+                message_template="检测到置信度漂移: 平均置信度 {avg_confidence:.2f} 异常偏高",
+            )
+        )
 
-        self.add_alert_rule(AlertRule(
-            name="low_confidence_drift",
-            condition=lambda m: m.get("avg_confidence", 0.5) < 0.3 and m.get(
-                "drift_detected", False),
-            severity="critical",
-            message_template="检测到严重置信度下降: 平均置信度 {avg_confidence:.2f}"
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="low_confidence_drift",
+                condition=lambda m: m.get("avg_confidence", 0.5) < 0.3
+                and m.get("drift_detected", False),
+                severity="critical",
+                message_template="检测到严重置信度下降: 平均置信度 {avg_confidence:.2f}",
+            )
+        )
 
-        self.add_alert_rule(AlertRule(
-            name="high_error_rate",
-            condition=lambda m: m.get("error_rate", 0) > 0.1,
-            severity="critical",
-            message_template="错误率过高: {error_rate:.2%}"
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="high_error_rate",
+                condition=lambda m: m.get("error_rate", 0) > 0.1,
+                severity="critical",
+                message_template="错误率过高: {error_rate:.2%}",
+            )
+        )
 
-        self.add_alert_rule(AlertRule(
-            name="very_low_confidence_spike",
-            condition=lambda m: m.get("very_low_ratio", 0) > 0.5,
-            severity="warning",
-            message_template="极低置信度比例异常: {very_low_ratio:.2%}"
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="very_low_confidence_spike",
+                condition=lambda m: m.get("very_low_ratio", 0) > 0.5,
+                severity="warning",
+                message_template="极低置信度比例异常: {very_low_ratio:.2%}",
+            )
+        )
 
-        self.add_alert_rule(AlertRule(
-            name="confidence_variance_high",
-            condition=lambda m: m.get("variance", 0) > 0.1,
-            severity="info",
-            message_template="置信度方差异常: {variance:.4f}"
-        ))
+        self.add_alert_rule(
+            AlertRule(
+                name="confidence_variance_high",
+                condition=lambda m: m.get("variance", 0) > 0.1,
+                severity="info",
+                message_template="置信度方差异常: {variance:.4f}",
+            )
+        )
 
     def add_alert_rule(self, rule: AlertRule):
         """添加告警规则
@@ -144,7 +154,7 @@ class ConfidenceMonitor:
         self.confidence_history.append(confidence_score)
 
         if len(self.confidence_history) > self.max_history_size:
-            self.confidence_history = self.confidence_history[-self.max_history_size:]
+            self.confidence_history = self.confidence_history[-self.max_history_size :]
 
         if level:
             self.level_counts[level] += 1
@@ -164,7 +174,7 @@ class ConfidenceMonitor:
                 "min_confidence": 0.0,
                 "max_confidence": 0.0,
                 "total_samples": 0,
-                "drift_detected": False
+                "drift_detected": False,
             }
 
         history = self.confidence_history[-100:]
@@ -204,7 +214,7 @@ class ConfidenceMonitor:
             "very_low_ratio": round(very_low_ratio, 4),
             "high_ratio": round(high_ratio, 4),
             "low_ratio": round(low_ratio, 4),
-            "level_counts": dict(self.level_counts)
+            "level_counts": dict(self.level_counts),
         }
 
     def check_alerts(self) -> List[Dict[str, Any]]:
@@ -225,21 +235,24 @@ class ConfidenceMonitor:
                     "severity": rule.severity,
                     "message": message,
                     "timestamp": datetime.now().isoformat(),
-                    "metrics": {k: v for k, v in metrics.items() if not isinstance(v, dict)}
+                    "metrics": {
+                        k: v for k, v in metrics.items() if not isinstance(v, dict)
+                    },
                 }
 
                 triggered_alerts.append(alert)
 
                 self.alert_history.append(alert)
                 if len(self.alert_history) > self.max_alert_history:
-                    self.alert_history = self.alert_history[-self.max_alert_history:]
+                    self.alert_history = self.alert_history[-self.max_alert_history :]
 
                 logger.warning(f"告警触发 [{rule.severity}]: {message}")
 
         return triggered_alerts
 
-    def get_alert_history(self, limit: int = 100,
-                          severity: str = None) -> List[Dict[str, Any]]:
+    def get_alert_history(
+        self, limit: int = 100, severity: str = None
+    ) -> List[Dict[str, Any]]:
         """获取告警历史
 
         Args:
@@ -263,10 +276,7 @@ class ConfidenceMonitor:
             漂移状态信息
         """
         if len(self.confidence_history) < 200:
-            return {
-                "drift_detected": False,
-                "message": "样本不足，无法检测漂移"
-            }
+            return {"drift_detected": False, "message": "样本不足，无法检测漂移"}
 
         recent = self.confidence_history[-100:]
         older = self.confidence_history[-200:-100]
@@ -292,7 +302,7 @@ class ConfidenceMonitor:
             "drift_detected": status != "stable",
             "recent_avg": round(recent_avg, 4),
             "older_avg": round(older_avg, 4),
-            "drift_magnitude": round(drift_magnitude, 4)
+            "drift_magnitude": round(drift_magnitude, 4),
         }
 
     def reset_statistics(self):
@@ -312,13 +322,11 @@ class ConfidenceAlertManager:
     def __init__(self):
         """初始化置信度告警管理器"""
         self.monitor = ConfidenceMonitor()
-        self.notification_callbacks: List[Callable[[
-            Dict[str, Any]], None]] = []
+        self.notification_callbacks: List[Callable[[Dict[str, Any]], None]] = []
 
         logger.info("置信度告警管理器初始化完成")
 
-    def add_notification_callback(
-        self, callback: Callable[[Dict[str, Any]], None]):
+    def add_notification_callback(self, callback: Callable[[Dict[str, Any]], None]):
         """添加通知回调
 
         Args:
@@ -327,7 +335,8 @@ class ConfidenceAlertManager:
         self.notification_callbacks.append(callback)
 
     def remove_notification_callback(
-        self, callback: Callable[[Dict[str, Any]], None]) -> bool:
+        self, callback: Callable[[Dict[str, Any]], None]
+    ) -> bool:
         """移除通知回调
 
         Args:
@@ -341,8 +350,12 @@ class ConfidenceAlertManager:
             return True
         return False
 
-    def process_confidence_result(self, confidence_score: float,
-                                  confidence_level: str = None, metadata: Dict[str, Any] = None):
+    def process_confidence_result(
+        self,
+        confidence_score: float,
+        confidence_level: str = None,
+        metadata: Dict[str, Any] = None,
+    ):
         """处理置信度结果
 
         Args:
@@ -397,7 +410,7 @@ class ConfidenceAlertManager:
             "metrics": metrics,
             "drift_status": drift_status,
             "alert_count": len(self.monitor.alert_history),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
     def get_monitoring_summary(self) -> Dict[str, Any]:
@@ -409,15 +422,19 @@ class ConfidenceAlertManager:
         return {
             "monitor": {
                 "total_samples": len(self.monitor.confidence_history),
-                "level_counts": dict(self.monitor.level_counts)
+                "level_counts": dict(self.monitor.level_counts),
             },
             "alerts": {
                 "active_rules": len(self.monitor.alert_rules),
                 "total_triggered": len(self.monitor.alert_history),
-                "recent_critical": len(self.monitor.get_alert_history(severity="critical")),
-                "recent_warning": len(self.monitor.get_alert_history(severity="warning"))
+                "recent_critical": len(
+                    self.monitor.get_alert_history(severity="critical")
+                ),
+                "recent_warning": len(
+                    self.monitor.get_alert_history(severity="warning")
+                ),
             },
-            "health": self.get_system_health()
+            "health": self.get_system_health(),
         }
 
 

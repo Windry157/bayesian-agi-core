@@ -6,18 +6,19 @@
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Any
-from .interfaces import IModelManager, IAssistant
+from typing import Any, Dict, List, Optional
+
 from .cognition.bayesian_brain import BayesianBrain
 from .cognition.cognition_coordinator import CognitionCoordinator
 from .cognition.system2 import System2
-from .memory.memory_system import MemorySystem
-from .memory.context_bridge import context_bridge
-from .memory.state_persistence import state_persistence
-from .llm.ollama_service import OllamaLLM
+from .interfaces import IAssistant, IModelManager
+from .learning.intrinsic_motivation import intrinsic_motivation_system
 from .learning.learning_manager import LearningManager
 from .learning.meta_learning import meta_learning_architecture
-from .learning.intrinsic_motivation import intrinsic_motivation_system
+from .llm.ollama_service import OllamaLLM
+from .memory.context_bridge import context_bridge
+from .memory.memory_system import MemorySystem
+from .memory.state_persistence import state_persistence
 from .safety.constraint_enforcement import constraint_enforcement
 
 
@@ -140,8 +141,7 @@ class Assistant(IAssistant):
         # 加载记忆系统配置
         memory_config = config.get("memory", {})
         memory_dir = memory_config.get("directory", "memory")
-        vector_model = memory_config.get(
-            "vector_model", "ollama:nomic-embed-text")
+        vector_model = memory_config.get("vector_model", "ollama:nomic-embed-text")
         ollama_url = config.get("models", {}).get(
             "ollama_url", "http://localhost:11434"
         )
@@ -260,7 +260,8 @@ class Assistant(IAssistant):
         self.learning_manager.set_learning_rate(rate)
 
     async def process_with_context(
-        self, input_text: str, session_id: str) -> Dict[str, Any]:
+        self, input_text: str, session_id: str
+    ) -> Dict[str, Any]:
         """基于完整历史上下文处理
 
         Args:
@@ -272,13 +273,17 @@ class Assistant(IAssistant):
         """
         try:
             # 1. 加载相关历史上下文
-            context = await self.context_bridge.load_relevant_context(session_id, input_text)
+            context = await self.context_bridge.load_relevant_context(
+                session_id, input_text
+            )
 
             # 2. 加载认知状态
             cognitive_state = await self.state_persistence.load_cognitive_state()
 
             # 3. 增强推理
-            response = await self._enhanced_reasoning(input_text, context, cognitive_state)
+            response = await self._enhanced_reasoning(
+                input_text, context, cognitive_state
+            )
 
             # 4. 约束执行检查
             constraint_result = self.constraint_enforcement.check_constraints(
@@ -295,12 +300,17 @@ class Assistant(IAssistant):
             session_context = {
                 "messages": [
                     {"role": "user", "content": input_text, "timestamp": "now"},
-                    {"role": "assistant", "content": response.get(
-                        "response", ""), "timestamp": "now"}
+                    {
+                        "role": "assistant",
+                        "content": response.get("response", ""),
+                        "timestamp": "now",
+                    },
                 ],
-                "metadata": {"last_input": input_text}
+                "metadata": {"last_input": input_text},
             }
-            await self.context_bridge.update_session_context(session_id, session_context)
+            await self.context_bridge.update_session_context(
+                session_id, session_context
+            )
 
             # 6. 更新认知状态
             await self.state_persistence.update_state(response)
@@ -311,7 +321,7 @@ class Assistant(IAssistant):
                 "output": response.get("response", ""),
                 "context": context,
                 "constraint_enforced": response.get("constraint_enforced", False),
-                "timestamp": "now"
+                "timestamp": "now",
             }
             await self.learn_from_experience(experience)
 
@@ -322,7 +332,8 @@ class Assistant(IAssistant):
             return {"error": str(e)}
 
     async def _enhanced_reasoning(
-        self, input_text: str, context: Dict[str, Any], cognitive_state: Dict[str, Any]) -> Dict[str, Any]:
+        self, input_text: str, context: Dict[str, Any], cognitive_state: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """增强推理
 
         Args:
@@ -340,7 +351,7 @@ class Assistant(IAssistant):
         return {
             "response": response_text,
             "context_used": True,
-            "cognitive_state_updated": True
+            "cognitive_state_updated": True,
         }
 
     async def self_improvement_cycle(self) -> Dict[str, Any]:
@@ -381,12 +392,10 @@ class Assistant(IAssistant):
             return []
 
     async def start_autonomous_learning(self):
-        """启动自主学习
-        """
+        """启动自主学习"""
         try:
             # 启动内在动机系统的自主学习循环
-            asyncio.create_task(
-                self.intrinsic_motivation.autonomous_learning_loop())
+            asyncio.create_task(self.intrinsic_motivation.autonomous_learning_loop())
 
             logging.info("自主学习启动成功")
             return True
@@ -407,7 +416,7 @@ class Assistant(IAssistant):
             "cognitive_state": self.state_persistence.get_state_summary(),
             "context_bridge": {
                 "session_count": len(self.context_bridge.get_session_contexts())
-            }
+            },
         }
 
     def clear_session(self, session_id: str):

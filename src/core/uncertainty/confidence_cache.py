@@ -5,14 +5,14 @@
 提供置信度评分的缓存和异步处理功能
 """
 
-import logging
+import asyncio
 import hashlib
 import json
-import asyncio
-from typing import Dict, List, Optional, Any, Callable
-from datetime import datetime, timedelta
+import logging
 from collections import OrderedDict
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List, Optional
 
 # 配置日志
 logging.basicConfig(
@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CacheEntry:
     """缓存条目"""
+
     key: str
     value: Any
     created_at: datetime
@@ -59,7 +60,8 @@ class ConfidenceCache:
         self._async_tasks: Dict[str, asyncio.Task] = {}
 
         logger.info(
-            f"置信度缓存初始化完成: max_size={max_size}, default_ttl={default_ttl}s")
+            f"置信度缓存初始化完成: max_size={max_size}, default_ttl={default_ttl}s"
+        )
 
     def _generate_key(self, input_data: Dict[str, Any]) -> str:
         """生成缓存键
@@ -70,8 +72,7 @@ class ConfidenceCache:
         Returns:
             缓存键
         """
-        sorted_data = json.dumps(
-            input_data, sort_keys=True, ensure_ascii=False)
+        sorted_data = json.dumps(input_data, sort_keys=True, ensure_ascii=False)
         return hashlib.sha256(sorted_data.encode()).hexdigest()[:16]
 
     def get(self, input_data: Dict[str, Any]) -> Optional[Any]:
@@ -106,8 +107,9 @@ class ConfidenceCache:
         logger.debug(f"缓存未命中: {key}")
         return None
 
-    def set(self, input_data: Dict[str, Any],
-            value: Any, ttl: Optional[int] = None) -> None:
+    def set(
+        self, input_data: Dict[str, Any], value: Any, ttl: Optional[int] = None
+    ) -> None:
         """设置缓存值
 
         Args:
@@ -130,10 +132,7 @@ class ConfidenceCache:
             expires_at = datetime.now() + timedelta(seconds=ttl)
 
         self._cache[key] = CacheEntry(
-            key=key,
-            value=value,
-            created_at=datetime.now(),
-            expires_at=expires_at
+            key=key, value=value, created_at=datetime.now(), expires_at=expires_at
         )
 
         self._cache.move_to_end(key)
@@ -180,13 +179,10 @@ class ConfidenceCache:
         total_requests = self._hits + self._misses
         hit_rate = self._hits / total_requests if total_requests > 0 else 0
 
-        total_access_count = sum(
-            entry.access_count for entry in self._cache.values())
-        avg_access_count = total_access_count / \
-            len(self._cache) if self._cache else 0
+        total_access_count = sum(entry.access_count for entry in self._cache.values())
+        avg_access_count = total_access_count / len(self._cache) if self._cache else 0
 
-        expired_count = sum(
-            1 for entry in self._cache.values() if entry.is_expired())
+        expired_count = sum(1 for entry in self._cache.values() if entry.is_expired())
 
         return {
             "size": len(self._cache),
@@ -197,7 +193,7 @@ class ConfidenceCache:
             "total_requests": total_requests,
             "avg_access_count": round(avg_access_count, 2),
             "expired_count": expired_count,
-            "default_ttl": self.default_ttl
+            "default_ttl": self.default_ttl,
         }
 
     def cleanup_expired(self) -> int:
@@ -206,10 +202,7 @@ class ConfidenceCache:
         Returns:
             清理的条目数
         """
-        expired_keys = [
-            key for key, entry in self._cache.items()
-            if entry.is_expired()
-        ]
+        expired_keys = [key for key, entry in self._cache.items() if entry.is_expired()]
 
         for key in expired_keys:
             del self._cache[key]
@@ -240,11 +233,7 @@ class AsyncConfidenceProcessor:
 
         logger.info(f"异步置信度处理器初始化完成: max_concurrent={max_concurrent}")
 
-    async def process_with_semaphore(
-        self,
-        task_id: str,
-        coro: Callable
-    ) -> Any:
+    async def process_with_semaphore(self, task_id: str, coro: Callable) -> Any:
         """使用信号量限制并发
 
         Args:
@@ -261,11 +250,7 @@ class AsyncConfidenceProcessor:
             logger.debug(f"任务完成: {task_id}")
             return result
 
-    async def submit_task(
-        self,
-        task_id: str,
-        coro: Callable
-    ) -> asyncio.Task:
+    async def submit_task(self, task_id: str, coro: Callable) -> asyncio.Task:
         """提交异步任务
 
         Args:
@@ -289,8 +274,9 @@ class AsyncConfidenceProcessor:
 
         return task
 
-    async def get_result(self, task_id: str,
-                         timeout: Optional[float] = None) -> Optional[Any]:
+    async def get_result(
+        self, task_id: str, timeout: Optional[float] = None
+    ) -> Optional[Any]:
         """获取任务结果
 
         Args:
@@ -361,7 +347,7 @@ class AsyncConfidenceProcessor:
         return {
             "max_concurrent": self.max_concurrent,
             "pending_tasks": len(self._tasks),
-            "completed_results": len(self._results)
+            "completed_results": len(self._results),
         }
 
 
@@ -372,10 +358,7 @@ class ConfidenceCacheManager:
     """
 
     def __init__(
-        self,
-        max_cache_size: int = 1000,
-        cache_ttl: int = 3600,
-        max_concurrent: int = 5
+        self, max_cache_size: int = 1000, cache_ttl: int = 3600, max_concurrent: int = 5
     ):
         """初始化缓存管理器
 
@@ -384,10 +367,8 @@ class ConfidenceCacheManager:
             cache_ttl: 缓存TTL
             max_concurrent: 最大并发数
         """
-        self.cache = ConfidenceCache(
-            max_size=max_cache_size, default_ttl=cache_ttl)
-        self.async_processor = AsyncConfidenceProcessor(
-            max_concurrent=max_concurrent)
+        self.cache = ConfidenceCache(max_size=max_cache_size, default_ttl=cache_ttl)
+        self.async_processor = AsyncConfidenceProcessor(max_concurrent=max_concurrent)
 
         logger.info("置信度缓存管理器初始化完成")
 
@@ -395,7 +376,7 @@ class ConfidenceCacheManager:
         self,
         input_data: Dict[str, Any],
         compute_func: Callable,
-        ttl: Optional[int] = None
+        ttl: Optional[int] = None,
     ) -> Any:
         """获取缓存或计算
 
@@ -426,7 +407,7 @@ class ConfidenceCacheManager:
         """
         return {
             "cache": self.cache.get_stats(),
-            "async_processor": self.async_processor.get_stats()
+            "async_processor": self.async_processor.get_stats(),
         }
 
 

@@ -5,8 +5,9 @@ HTTP客户端模块
 负责管理HTTP连接池，减少网络连接建立时间
 """
 
+from typing import Any, Dict, Optional
+
 import httpx
-from typing import Dict, Optional, Any
 
 
 class HttpClientManager:
@@ -20,8 +21,7 @@ class HttpClientManager:
         self.clients: Dict[str, httpx.AsyncClient] = {}
         self.sync_clients: Dict[str, httpx.Client] = {}
 
-    async def get_client(
-        self, base_url: Optional[str] = None) -> httpx.AsyncClient:
+    async def get_client(self, base_url: Optional[str] = None) -> httpx.AsyncClient:
         """获取异步HTTP客户端
 
         Args:

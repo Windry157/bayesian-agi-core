@@ -6,8 +6,8 @@
 """
 
 import logging
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 # 配置日志
 logging.basicConfig(
@@ -47,14 +47,14 @@ class ServiceMesh:
         self.service_configs[service_name] = {
             **config,
             "registered_at": datetime.now().isoformat(),
-            "last_updated": datetime.now().isoformat()
+            "last_updated": datetime.now().isoformat(),
         }
 
         # 初始化服务健康状态
         self.service_health[service_name] = {
             "status": "unknown",
             "last_check": datetime.now().isoformat(),
-            "response_time": 0
+            "response_time": 0,
         }
 
         # 初始化流量统计
@@ -62,7 +62,7 @@ class ServiceMesh:
             "requests_total": 0,
             "errors_total": 0,
             "request_rate": 0,
-            "error_rate": 0
+            "error_rate": 0,
         }
 
         logger.info(f"服务注册: {service_name}")
@@ -90,10 +90,7 @@ class ServiceMesh:
         Args:
             rule: 流量规则
         """
-        self.traffic_rules.append({
-            **rule,
-            "created_at": datetime.now().isoformat()
-        })
+        self.traffic_rules.append({**rule, "created_at": datetime.now().isoformat()})
         logger.info(f"添加流量规则: {rule.get('name', 'unnamed')}")
 
     def remove_traffic_rule(self, rule_name: str):
@@ -103,8 +100,7 @@ class ServiceMesh:
             rule_name: 规则名称
         """
         self.traffic_rules = [
-            rule for rule in self.traffic_rules
-            if rule.get('name') != rule_name
+            rule for rule in self.traffic_rules if rule.get("name") != rule_name
         ]
         logger.info(f"删除流量规则: {rule_name}")
 
@@ -117,12 +113,11 @@ class ServiceMesh:
         """
         self.security_policies[service_name] = {
             **policy,
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
         }
         logger.info(f"设置安全策略: {service_name}")
 
-    def get_service_config(
-        self, service_name: str) -> Optional[Dict[str, Any]]:
+    def get_service_config(self, service_name: str) -> Optional[Dict[str, Any]]:
         """获取服务配置
 
         Args:
@@ -133,8 +128,9 @@ class ServiceMesh:
         """
         return self.service_configs.get(service_name)
 
-    def update_service_health(self, service_name: str,
-                              status: str, response_time: float):
+    def update_service_health(
+        self, service_name: str, status: str, response_time: float
+    ):
         """更新服务健康状态
 
         Args:
@@ -143,16 +139,18 @@ class ServiceMesh:
             response_time: 响应时间
         """
         if service_name in self.service_health:
-            self.service_health[service_name].update({
-                "status": status,
-                "last_check": datetime.now().isoformat(),
-                "response_time": response_time
-            })
+            self.service_health[service_name].update(
+                {
+                    "status": status,
+                    "last_check": datetime.now().isoformat(),
+                    "response_time": response_time,
+                }
+            )
         else:
             self.service_health[service_name] = {
                 "status": status,
                 "last_check": datetime.now().isoformat(),
-                "response_time": response_time
+                "response_time": response_time,
             }
 
     def record_traffic(self, service_name: str, success: bool):
@@ -167,7 +165,7 @@ class ServiceMesh:
                 "requests_total": 0,
                 "errors_total": 0,
                 "request_rate": 0,
-                "error_rate": 0
+                "error_rate": 0,
             }
 
         self.traffic_stats[service_name]["requests_total"] += 1
@@ -177,11 +175,11 @@ class ServiceMesh:
         # 计算错误率
         total = self.traffic_stats[service_name]["requests_total"]
         errors = self.traffic_stats[service_name]["errors_total"]
-        self.traffic_stats[service_name]["error_rate"] = errors / \
-            total if total > 0 else 0
+        self.traffic_stats[service_name]["error_rate"] = (
+            errors / total if total > 0 else 0
+        )
 
-    def get_service_health(
-        self, service_name: str) -> Optional[Dict[str, Any]]:
+    def get_service_health(self, service_name: str) -> Optional[Dict[str, Any]]:
         """获取服务健康状态
 
         Args:
@@ -238,7 +236,7 @@ class ServiceMesh:
                 service: {
                     "config": self.service_configs.get(service),
                     "health": self.service_health.get(service),
-                    "traffic": self.traffic_stats.get(service)
+                    "traffic": self.traffic_stats.get(service),
                 }
                 for service in self.service_configs
             },
@@ -246,7 +244,7 @@ class ServiceMesh:
             "security_policies": self.security_policies,
             "total_services": len(self.service_configs),
             "total_rules": len(self.traffic_rules),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
 

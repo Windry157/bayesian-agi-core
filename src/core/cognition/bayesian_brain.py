@@ -7,6 +7,7 @@
 
 import math
 from typing import Dict, List
+
 from ..interfaces import IBayesianBrain
 from .chain_of_thought import ChainOfThought
 
@@ -93,8 +94,8 @@ class BayesianBrain(IBayesianBrain):
         likelihood = 0.5
 
         # 基于观测数据计算似然
-        if 'evidence' in observation:
-            evidence = observation['evidence']
+        if "evidence" in observation:
+            evidence = observation["evidence"]
             if isinstance(evidence, dict):
                 # 检查证据中是否与状态相关
                 for key, value in evidence.items():

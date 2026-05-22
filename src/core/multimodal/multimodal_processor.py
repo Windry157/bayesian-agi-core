@@ -6,9 +6,10 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Any, Union
-from PIL import Image
+from typing import Any, Dict, List, Union
+
 import numpy as np
+from PIL import Image
 
 
 class MultimodalProcessor(ABC):
@@ -165,8 +166,7 @@ class BasicMultimodalProcessor(MultimodalProcessor):
                         "confidence": 0.98,
                         "bbox": [100, 100, 200, 300],
                     },
-                    {"class": "car", "confidence": 0.92,
-                        "bbox": [300, 200, 500, 350]},
+                    {"class": "car", "confidence": 0.92, "bbox": [300, 200, 500, 350]},
                 ],
                 "input_type": "image",
                 "task": task,

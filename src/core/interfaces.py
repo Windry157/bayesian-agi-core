@@ -5,7 +5,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, AsyncGenerator, Any, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
 
 class IBayesianBrain(ABC):
@@ -94,8 +94,7 @@ class IMemorySystem(ABC):
         """
 
     @abstractmethod
-    async def add_entity(self, entity_id: str,
-                         properties: Dict[str, Any]) -> bool:
+    async def add_entity(self, entity_id: str, properties: Dict[str, Any]) -> bool:
         """添加实体
 
         Args:

@@ -6,10 +6,12 @@ Cognition Service
 """
 
 import logging
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from src.utils.config import load_config
+
 from src.core.assistant import Assistant
+from src.utils.config import load_config
 
 # 配置日志
 logging.basicConfig(
@@ -63,8 +65,7 @@ async def make_decision(possible_actions: list):
         decision = assistant.make_decision(possible_actions)
         return {"decision": decision}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to make decision: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to make decision: {e}")
 
 
 # 根路径
@@ -101,5 +102,4 @@ test_metric 42
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("src.cognition_service",
-                host="0.0.0.0", port=8003, reload=True)
+    uvicorn.run("src.cognition_service", host="0.0.0.0", port=8003, reload=True)

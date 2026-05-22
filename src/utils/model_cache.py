@@ -5,9 +5,9 @@
 负责管理模型的缓存，减少模型加载时间
 """
 
-import time
 import threading
-from typing import Dict, Optional, Any
+import time
+from typing import Any, Dict, Optional
 
 
 class ModelCache:
@@ -43,8 +43,7 @@ class ModelCache:
                 return self.cache[key]["model"]
             return None
 
-    def set(self, key: str, model: Any,
-            metadata: Optional[Dict[str, Any]] = None):
+    def set(self, key: str, model: Any, metadata: Optional[Dict[str, Any]] = None):
         """设置缓存的模型
 
         Args:

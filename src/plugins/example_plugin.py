@@ -4,8 +4,9 @@
 示例插件
 """
 
+from typing import Any, Dict
+
 from src.core.plugins import PluginInterface
-from typing import Dict, Any
 
 
 class ExamplePlugin(PluginInterface):

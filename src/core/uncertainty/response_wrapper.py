@@ -6,8 +6,8 @@
 """
 
 import logging
-from typing import Dict, List, Any
 from datetime import datetime
+from typing import Any, Dict, List
 
 # 配置日志
 logging.basicConfig(
@@ -32,7 +32,7 @@ class ResponseWrapper:
         self,
         consciousness_result: Dict[str, Any],
         input_text: str,
-        session_id: str = "default"
+        session_id: str = "default",
     ) -> Dict[str, Any]:
         """包装意识系统响应
 
@@ -62,7 +62,7 @@ class ResponseWrapper:
             decision_context = {
                 "input": input_text,
                 "thought_chain": thought_chain,
-                "context": context_used
+                "context": context_used,
             }
 
             # 评分决策置信度
@@ -70,7 +70,8 @@ class ResponseWrapper:
                 decision_context=decision_context,
                 relevant_memories=[],  # 意识系统结果不包含实际记忆列表
                 knowledge_coverage=self._estimate_knowledge_coverage(
-                    decision, thought_chain)
+                    decision, thought_chain
+                ),
             )
 
             # 构建标准化响应
@@ -82,29 +83,28 @@ class ResponseWrapper:
                 "decision_type": decision.get("type", "unknown"),
                 "timestamp": datetime.now().isoformat(),
                 "session_id": session_id,
-                "raw_response": consciousness_result
+                "raw_response": consciousness_result,
             }
 
             # 记录包装历史
             self._record_wrapping(standardized_response)
 
             logger.info(
-                f"意识系统响应包装完成: 置信度={confidence_result['confidence_score']:.3f}")
+                f"意识系统响应包装完成: 置信度={confidence_result['confidence_score']:.3f}"
+            )
             return standardized_response
 
         except Exception as e:
             logger.error(f"意识系统响应包装失败: {e}")
             return self._create_error_response(
-                input_text=input_text,
-                error=str(e),
-                session_id=session_id
+                input_text=input_text, error=str(e), session_id=session_id
             )
 
     async def wrap_text_generation_response(
         self,
         generation_result: Dict[str, Any],
         input_text: str,
-        session_id: str = "default"
+        session_id: str = "default",
     ) -> Dict[str, Any]:
         """包装文本生成响应
 
@@ -130,10 +130,12 @@ class ResponseWrapper:
                 # 如果没有置信度信息，计算一个简单置信度
                 from .confidence_scorer import confidence_scorer
 
-                confidence_result = await confidence_scorer.score_text_generation_confidence(
-                    prompt=input_text,
-                    generated_text=answer_text,
-                    model_output=generation_result.get("raw_response")
+                confidence_result = (
+                    await confidence_scorer.score_text_generation_confidence(
+                        prompt=input_text,
+                        generated_text=answer_text,
+                        model_output=generation_result.get("raw_response"),
+                    )
                 )
 
                 confidence_score = confidence_result["confidence_score"]
@@ -148,7 +150,7 @@ class ResponseWrapper:
                 "generation_time": generation_result.get("generation_time", 0),
                 "timestamp": datetime.now().isoformat(),
                 "session_id": session_id,
-                "raw_response": generation_result
+                "raw_response": generation_result,
             }
 
             # 记录包装历史
@@ -160,16 +162,14 @@ class ResponseWrapper:
         except Exception as e:
             logger.error(f"文本生成响应包装失败: {e}")
             return self._create_error_response(
-                input_text=input_text,
-                error=str(e),
-                session_id=session_id
+                input_text=input_text, error=str(e), session_id=session_id
             )
 
     async def wrap_decision_response(
         self,
         decision_result: Dict[str, Any],
         input_text: str,
-        session_id: str = "default"
+        session_id: str = "default",
     ) -> Dict[str, Any]:
         """包装决策响应
 
@@ -205,18 +205,15 @@ class ResponseWrapper:
                 from .confidence_scorer import confidence_scorer
 
                 confidence_result = await confidence_scorer.score_decision_confidence(
-                    decision_context={"input": input_text,
-                                      "decision": decision_result},
+                    decision_context={"input": input_text, "decision": decision_result},
                     relevant_memories=decision_result.get("memories", []),
-                    knowledge_coverage=decision_result.get(
-                        "knowledge_coverage", 0.5)
+                    knowledge_coverage=decision_result.get("knowledge_coverage", 0.5),
                 )
 
                 confidence_score = confidence_result["confidence_score"]
                 confidence_details = confidence_result
             else:
-                confidence_details = decision_result.get(
-                    "confidence_details", {})
+                confidence_details = decision_result.get("confidence_details", {})
 
             # 构建标准化响应
             standardized_response = {
@@ -227,7 +224,7 @@ class ResponseWrapper:
                 "decision_content": decision_content,
                 "timestamp": datetime.now().isoformat(),
                 "session_id": session_id,
-                "raw_response": decision_result
+                "raw_response": decision_result,
             }
 
             # 记录包装历史
@@ -239,16 +236,14 @@ class ResponseWrapper:
         except Exception as e:
             logger.error(f"决策响应包装失败: {e}")
             return self._create_error_response(
-                input_text=input_text,
-                error=str(e),
-                session_id=session_id
+                input_text=input_text, error=str(e), session_id=session_id
             )
 
     async def _generate_answer_from_decision(
         self,
         decision: Dict[str, Any],
         thought_chain: List[Dict[str, Any]],
-        input_text: str
+        input_text: str,
     ) -> str:
         """从决策生成答案文本
 
@@ -290,7 +285,12 @@ class ResponseWrapper:
                 else:
                     # 从思维链中提取信息
                     thoughts_text = " ".join(
-                        [t.get("content", "") for t in thought_chain[-3:] if t.get("content")])
+                        [
+                            t.get("content", "")
+                            for t in thought_chain[-3:]
+                            if t.get("content")
+                        ]
+                    )
                     answer = f"基于我的思考过程: {thoughts_text}"
             else:
                 # 生成通用回答
@@ -304,9 +304,7 @@ class ResponseWrapper:
         return answer
 
     def _estimate_knowledge_coverage(
-        self,
-        decision: Dict[str, Any],
-        thought_chain: List[Dict[str, Any]]
+        self, decision: Dict[str, Any], thought_chain: List[Dict[str, Any]]
     ) -> float:
         """估计知识覆盖率
 
@@ -349,7 +347,8 @@ class ResponseWrapper:
             return 0.5
 
     def _summarize_thought_chain(
-        self, thought_chain: List[Dict[str, Any]]) -> Dict[str, Any]:
+        self, thought_chain: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """摘要思维链
 
         Args:
@@ -365,8 +364,7 @@ class ResponseWrapper:
         thought_types = {}
         for thought in thought_chain:
             thought_type = thought.get("type", "unknown")
-            thought_types[thought_type] = thought_types.get(
-                thought_type, 0) + 1
+            thought_types[thought_type] = thought_types.get(thought_type, 0) + 1
 
         # 提取关键内容
         key_thoughts = []
@@ -374,16 +372,19 @@ class ResponseWrapper:
             if thought.get("type") in ["conclusion", "decision", "analysis"]:
                 content = thought.get("content", "")
                 if content and len(content) < 100:  # 只保留简短内容
-                    key_thoughts.append({
-                        "type": thought.get("type"),
-                        "content_preview": content[:50] + ("..." if len(content) > 50 else "")
-                    })
+                    key_thoughts.append(
+                        {
+                            "type": thought.get("type"),
+                            "content_preview": content[:50]
+                            + ("..." if len(content) > 50 else ""),
+                        }
+                    )
 
         return {
             "steps": len(thought_chain),
             "types": thought_types,
             "key_thoughts": key_thoughts[:3],  # 最多3个关键思维
-            "has_conclusion": any(t.get("type") == "conclusion" for t in thought_chain)
+            "has_conclusion": any(t.get("type") == "conclusion" for t in thought_chain),
         }
 
     def _record_wrapping(self, wrapped_response: Dict[str, Any]):
@@ -399,10 +400,7 @@ class ResponseWrapper:
             self.wrapping_history = self.wrapping_history[-500:]
 
     def _create_error_response(
-        self,
-        input_text: str,
-        error: str,
-        session_id: str = "default"
+        self, input_text: str, error: str, session_id: str = "default"
     ) -> Dict[str, Any]:
         """创建错误响应
 
@@ -420,12 +418,12 @@ class ResponseWrapper:
             "confidence_details": {
                 "confidence_score": 0.0,
                 "confidence_level": "error",
-                "error": error
+                "error": error,
             },
             "error": True,
             "error_message": error,
             "timestamp": datetime.now().isoformat(),
-            "session_id": session_id
+            "session_id": session_id,
         }
 
     def get_wrapping_history(self) -> List[Dict[str, Any]]:
@@ -441,7 +439,7 @@ class ResponseWrapper:
         raw_response: Dict[str, Any],
         input_text: str,
         response_type: str = "auto",
-        session_id: str = "default"
+        session_id: str = "default",
     ) -> Dict[str, Any]:
         """包装任意响应
 
@@ -467,14 +465,22 @@ class ResponseWrapper:
 
         # 根据类型调用相应的包装方法
         if response_type == "consciousness":
-            return await self.wrap_consciousness_response(raw_response, input_text, session_id)
+            return await self.wrap_consciousness_response(
+                raw_response, input_text, session_id
+            )
         elif response_type == "text":
-            return await self.wrap_text_generation_response(raw_response, input_text, session_id)
+            return await self.wrap_text_generation_response(
+                raw_response, input_text, session_id
+            )
         elif response_type == "decision":
-            return await self.wrap_decision_response(raw_response, input_text, session_id)
+            return await self.wrap_decision_response(
+                raw_response, input_text, session_id
+            )
         else:
             logger.warning(f"未知响应类型: {response_type}, 使用决策包装")
-            return await self.wrap_decision_response(raw_response, input_text, session_id)
+            return await self.wrap_decision_response(
+                raw_response, input_text, session_id
+            )
 
 
 # 全局响应包装器实例

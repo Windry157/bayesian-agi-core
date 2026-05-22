@@ -6,7 +6,8 @@ Vision Service
 """
 
 import logging
-from fastapi import FastAPI, HTTPException, UploadFile, File
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 
@@ -54,8 +55,7 @@ async def classify_image(file: UploadFile = File(...)):
         logger.info(f"图像分类结果: {classification}, 置信度: {confidence}")
         return {"classification": classification, "confidence": confidence}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to classify image: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to classify image: {e}")
 
 
 # 目标检测
@@ -68,15 +68,13 @@ async def detect_objects(file: UploadFile = File(...)):
         # 模拟检测结果
         # 实际应用中，这里应该使用真实的视觉模型进行目标检测
         objects = [
-            {"class": "person", "confidence": 0.98,
-                "bbox": [100, 100, 200, 300]},
+            {"class": "person", "confidence": 0.98, "bbox": [100, 100, 200, 300]},
             {"class": "car", "confidence": 0.92, "bbox": [300, 200, 500, 350]},
         ]
         logger.info(f"目标检测结果: {objects}")
         return {"objects": objects}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to detect objects: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to detect objects: {e}")
 
 
 # 图像描述
@@ -92,8 +90,7 @@ async def describe_image(file: UploadFile = File(...)):
         logger.info(f"图像描述结果: {description}")
         return {"description": description}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to describe image: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to describe image: {e}")
 
 
 # 根路径

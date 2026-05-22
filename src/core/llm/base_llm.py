@@ -5,7 +5,7 @@ LLM基础接口
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, AsyncGenerator, Any
+from typing import Any, AsyncGenerator, Dict, List
 
 
 class BaseLLM(ABC):

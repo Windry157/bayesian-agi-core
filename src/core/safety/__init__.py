@@ -6,7 +6,4 @@
 
 from .constraint_enforcement import ConstraintEnforcementModule, constraint_enforcement
 
-__all__ = [
-    "ConstraintEnforcementModule",
-    "constraint_enforcement"
-]
+__all__ = ["ConstraintEnforcementModule", "constraint_enforcement"]

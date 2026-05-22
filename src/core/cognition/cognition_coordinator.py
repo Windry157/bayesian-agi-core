@@ -6,7 +6,8 @@
 """
 
 import time
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+
 from .system1 import System1
 
 
@@ -102,8 +103,7 @@ class CognitionCoordinator:
 
         return fused_decision
 
-    def _record_decision(
-        self, situation: Dict[str, Any], decision: Dict[str, Any]):
+    def _record_decision(self, situation: Dict[str, Any], decision: Dict[str, Any]):
         """记录决策历史
 
         Args:

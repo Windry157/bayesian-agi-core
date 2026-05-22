@@ -5,9 +5,9 @@
 负责管理数据的缓存，减少数据库查询和文件读取
 """
 
-import time
 import threading
-from typing import Dict, Optional, Any
+import time
+from typing import Any, Dict, Optional
 
 
 class DataCache:
@@ -52,8 +52,13 @@ class DataCache:
                     del self.access_times[key]
             return None
 
-    def set(self, key: str, data: Any,
-            metadata: Optional[Dict[str, Any]] = None, ttl: Optional[int] = None):
+    def set(
+        self,
+        key: str,
+        data: Any,
+        metadata: Optional[Dict[str, Any]] = None,
+        ttl: Optional[int] = None,
+    ):
         """设置缓存的数据
 
         Args:

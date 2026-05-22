@@ -9,8 +9,8 @@
 import logging
 import math
 import statistics
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 # 配置日志
 logging.basicConfig(
@@ -31,10 +31,10 @@ class ConfidenceScorer:
         """初始化置信度评分器"""
         self.scoring_history = []
         self.confidence_thresholds = {
-            "high": 0.8,      # 高置信度：直接回答
-            "medium": 0.6,    # 中等置信度：提供警告
-            "low": 0.4,       # 低置信度：请求澄清
-            "very_low": 0.2   # 极低置信度：拒绝回答
+            "high": 0.8,  # 高置信度：直接回答
+            "medium": 0.6,  # 中等置信度：提供警告
+            "low": 0.4,  # 低置信度：请求澄清
+            "very_low": 0.2,  # 极低置信度：拒绝回答
         }
 
         logger.info("置信度评分器初始化完成")
@@ -43,7 +43,7 @@ class ConfidenceScorer:
         self,
         decision_context: Dict[str, Any],
         relevant_memories: List[Dict[str, Any]],
-        knowledge_coverage: float
+        knowledge_coverage: float,
     ) -> Dict[str, Any]:
         """评分决策置信度
 
@@ -57,26 +57,27 @@ class ConfidenceScorer:
         """
         try:
             # 因子1：记忆匹配度
-            memory_match_score = self._calculate_memory_match_score(
-                relevant_memories)
+            memory_match_score = self._calculate_memory_match_score(relevant_memories)
 
             # 因子2：上下文一致性
             context_consistency_score = self._calculate_context_consistency(
-                decision_context)
+                decision_context
+            )
 
             # 因子3：知识覆盖率
             knowledge_coverage_score = knowledge_coverage
 
             # 因子4：决策历史相似度（如果有历史）
             historical_similarity_score = self._calculate_historical_similarity(
-                decision_context)
+                decision_context
+            )
 
             # 综合置信度（加权平均）
             confidence = (
-                memory_match_score * 0.3 +
-                context_consistency_score * 0.25 +
-                knowledge_coverage_score * 0.3 +
-                historical_similarity_score * 0.15
+                memory_match_score * 0.3
+                + context_consistency_score * 0.25
+                + knowledge_coverage_score * 0.3
+                + historical_similarity_score * 0.15
             )
 
             # 置信度分类
@@ -87,7 +88,7 @@ class ConfidenceScorer:
                 memory_match_score,
                 context_consistency_score,
                 knowledge_coverage_score,
-                historical_similarity_score
+                historical_similarity_score,
             )
 
             result = {
@@ -98,9 +99,9 @@ class ConfidenceScorer:
                     "memory_match": memory_match_score,
                     "context_consistency": context_consistency_score,
                     "knowledge_coverage": knowledge_coverage_score,
-                    "historical_similarity": historical_similarity_score
+                    "historical_similarity": historical_similarity_score,
                 },
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
             # 记录评分历史
@@ -116,14 +117,14 @@ class ConfidenceScorer:
                 "confidence_level": "unknown",
                 "uncertainty_analysis": {"error": str(e)},
                 "factor_scores": {},
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
     async def score_text_generation_confidence(
         self,
         prompt: str,
         generated_text: str,
-        model_output: Optional[Dict[str, Any]] = None
+        model_output: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """评分文本生成置信度
 
@@ -137,26 +138,23 @@ class ConfidenceScorer:
         """
         try:
             # 因子1：文本一致性（自洽性检查）
-            consistency_score = self._calculate_text_consistency(
-                generated_text)
+            consistency_score = self._calculate_text_consistency(generated_text)
 
             # 因子2：提示相关性
-            relevance_score = self._calculate_prompt_relevance(
-                prompt, generated_text)
+            relevance_score = self._calculate_prompt_relevance(prompt, generated_text)
 
             # 因子3：语法正确性（简单检查）
             grammar_score = self._calculate_grammar_score(generated_text)
 
             # 因子4：模型置信度（如果有概率信息）
-            model_confidence_score = self._extract_model_confidence(
-                model_output)
+            model_confidence_score = self._extract_model_confidence(model_output)
 
             # 综合置信度
             confidence = (
-                consistency_score * 0.3 +
-                relevance_score * 0.3 +
-                grammar_score * 0.2 +
-                model_confidence_score * 0.2
+                consistency_score * 0.3
+                + relevance_score * 0.3
+                + grammar_score * 0.2
+                + model_confidence_score * 0.2
             )
 
             # 置信度分类
@@ -169,15 +167,17 @@ class ConfidenceScorer:
                     "consistency": consistency_score,
                     "relevance": relevance_score,
                     "grammar": grammar_score,
-                    "model_confidence": model_confidence_score
+                    "model_confidence": model_confidence_score,
                 },
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
             # 记录评分历史
             self._record_scoring(result)
 
-            logger.info(f"文本生成置信度评分完成: {confidence:.3f} ({confidence_level})")
+            logger.info(
+                f"文本生成置信度评分完成: {confidence:.3f} ({confidence_level})"
+            )
             return result
 
         except Exception as e:
@@ -186,11 +186,10 @@ class ConfidenceScorer:
                 "confidence_score": 0.5,
                 "confidence_level": "unknown",
                 "factor_scores": {},
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
-    def _calculate_memory_match_score(
-        self, memories: List[Dict[str, Any]]) -> float:
+    def _calculate_memory_match_score(self, memories: List[Dict[str, Any]]) -> float:
         """计算记忆匹配度
 
         Args:
@@ -216,8 +215,9 @@ class ConfidenceScorer:
         if similarity_scores:
             avg_similarity = statistics.mean(similarity_scores)
             # 结合记忆数量和相似度
-            match_score = min(0.95, avg_similarity *
-                              (0.5 + 0.5 * (min(memory_count, 5) / 5)))
+            match_score = min(
+                0.95, avg_similarity * (0.5 + 0.5 * (min(memory_count, 5) / 5))
+            )
         else:
             # 没有相似度信息，基于数量估计
             match_score = min(0.8, 0.2 + 0.6 * (min(memory_count, 5) / 5))
@@ -235,8 +235,7 @@ class ConfidenceScorer:
         """
         # 简化实现：检查关键字段是否存在
         required_fields = ["input", "context", "thought_chain"]
-        present_fields = [
-            field for field in required_fields if field in context]
+        present_fields = [field for field in required_fields if field in context]
 
         if len(present_fields) == len(required_fields):
             # 所有关键字段都存在
@@ -248,8 +247,7 @@ class ConfidenceScorer:
                 base_score += 0.2
 
             # 检查上下文信息
-            relevant_history = context.get(
-                "context", {}).get("relevant_history", [])
+            relevant_history = context.get("context", {}).get("relevant_history", [])
             if relevant_history:
                 base_score += 0.1
 
@@ -259,8 +257,7 @@ class ConfidenceScorer:
             missing_count = len(required_fields) - len(present_fields)
             return max(0.1, 0.5 - missing_count * 0.2)
 
-    def _calculate_historical_similarity(
-        self, context: Dict[str, Any]) -> float:
+    def _calculate_historical_similarity(self, context: Dict[str, Any]) -> float:
         """计算历史相似度
 
         Args:
@@ -322,8 +319,7 @@ class ConfidenceScorer:
 
         return max(0.1, consistency)
 
-    def _calculate_prompt_relevance(
-        self, prompt: str, generated_text: str) -> float:
+    def _calculate_prompt_relevance(self, prompt: str, generated_text: str) -> float:
         """计算提示相关性
 
         Args:
@@ -362,7 +358,7 @@ class ConfidenceScorer:
             return 0.0
 
         # 简单启发式：句子结尾、标点符号
-        sentences = text.split('.')
+        sentences = text.split(".")
         if len(sentences) < 2:
             return 0.7  # 单句，难以评估
 
@@ -376,8 +372,9 @@ class ConfidenceScorer:
         if mean_length == 0:
             return 0.5
 
-        stdev_length = statistics.stdev(
-            sentence_lengths) if len(sentence_lengths) > 1 else 0
+        stdev_length = (
+            statistics.stdev(sentence_lengths) if len(sentence_lengths) > 1 else 0
+        )
         cv = stdev_length / mean_length
 
         # 中等变异系数表示良好的句子结构
@@ -387,7 +384,8 @@ class ConfidenceScorer:
         return max(0.2, grammar_score)
 
     def _extract_model_confidence(
-        self, model_output: Optional[Dict[str, Any]]) -> float:
+        self, model_output: Optional[Dict[str, Any]]
+    ) -> float:
         """从模型输出提取置信度
 
         Args:
@@ -425,7 +423,7 @@ class ConfidenceScorer:
         memory_match: float,
         context_consistency: float,
         knowledge_coverage: float,
-        historical_similarity: float
+        historical_similarity: float,
     ) -> Dict[str, Any]:
         """分析不确定性来源
 
@@ -441,47 +439,61 @@ class ConfidenceScorer:
         uncertainty_sources = []
 
         if memory_match < 0.3:
-            uncertainty_sources.append({
-                "source": "memory_match",
-                "score": memory_match,
-                "description": "缺乏相关记忆支持",
-                "recommendation": "需要更多领域知识或示例"
-            })
+            uncertainty_sources.append(
+                {
+                    "source": "memory_match",
+                    "score": memory_match,
+                    "description": "缺乏相关记忆支持",
+                    "recommendation": "需要更多领域知识或示例",
+                }
+            )
 
         if context_consistency < 0.4:
-            uncertainty_sources.append({
-                "source": "context_consistency",
-                "score": context_consistency,
-                "description": "上下文信息不完整或不一致",
-                "recommendation": "需要澄清问题背景或提供更多上下文"
-            })
+            uncertainty_sources.append(
+                {
+                    "source": "context_consistency",
+                    "score": context_consistency,
+                    "description": "上下文信息不完整或不一致",
+                    "recommendation": "需要澄清问题背景或提供更多上下文",
+                }
+            )
 
         if knowledge_coverage < 0.3:
-            uncertainty_sources.append({
-                "source": "knowledge_coverage",
-                "score": knowledge_coverage,
-                "description": "知识覆盖不足",
-                "recommendation": "需要扩展相关知识库"
-            })
+            uncertainty_sources.append(
+                {
+                    "source": "knowledge_coverage",
+                    "score": knowledge_coverage,
+                    "description": "知识覆盖不足",
+                    "recommendation": "需要扩展相关知识库",
+                }
+            )
 
         if historical_similarity < 0.3:
-            uncertainty_sources.append({
-                "source": "historical_similarity",
-                "score": historical_similarity,
-                "description": "缺乏类似历史案例",
-                "recommendation": "需要更多类似问题的经验"
-            })
+            uncertainty_sources.append(
+                {
+                    "source": "historical_similarity",
+                    "score": historical_similarity,
+                    "description": "缺乏类似历史案例",
+                    "recommendation": "需要更多类似问题的经验",
+                }
+            )
 
         # 计算总体不确定性
-        scores = [memory_match, context_consistency,
-                  knowledge_coverage, historical_similarity]
+        scores = [
+            memory_match,
+            context_consistency,
+            knowledge_coverage,
+            historical_similarity,
+        ]
         avg_score = statistics.mean(scores) if scores else 0.5
         overall_uncertainty = 1.0 - avg_score
 
         return {
             "overall_uncertainty": overall_uncertainty,
             "uncertainty_sources": uncertainty_sources,
-            "primary_source": uncertainty_sources[0]["source"] if uncertainty_sources else None
+            "primary_source": (
+                uncertainty_sources[0]["source"] if uncertainty_sources else None
+            ),
         }
 
     def _classify_confidence(self, confidence_score: float) -> str:

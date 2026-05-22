@@ -7,7 +7,7 @@
 
 import logging
 import random
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 # 配置日志
 logging.basicConfig(
@@ -30,7 +30,7 @@ class ServiceDiscovery:
             "memory_service": [],
             "cognition_service": [],
             "vision_service": [],
-            "multimodal_service": []
+            "multimodal_service": [],
         }
         # 服务健康状态
         self.service_health: Dict[str, Dict[str, bool]] = {}
@@ -41,8 +41,9 @@ class ServiceDiscovery:
 
         logger.info("服务发现模块初始化完成")
 
-    def register_service(self, service_name: str,
-                         service_url: str, weight: float = 1.0):
+    def register_service(
+        self, service_name: str, service_url: str, weight: float = 1.0
+    ):
         """注册服务
 
         Args:
@@ -60,12 +61,14 @@ class ServiceDiscovery:
                 return
 
         # 添加服务
-        self.services[service_name].append({
-            "url": service_url,
-            "weight": weight,
-            "last_health_check": None,
-            "status": "unknown"
-        })
+        self.services[service_name].append(
+            {
+                "url": service_url,
+                "weight": weight,
+                "last_health_check": None,
+                "status": "unknown",
+            }
+        )
 
         # 初始化健康状态
         if service_name not in self.service_health:
@@ -93,23 +96,30 @@ class ServiceDiscovery:
         """
         if service_name in self.services:
             self.services[service_name] = [
-                service for service in self.services[service_name]
+                service
+                for service in self.services[service_name]
                 if service["url"] != service_url
             ]
 
             # 更新健康状态
-            if service_name in self.service_health and service_url in self.service_health[
-                service_name]:
+            if (
+                service_name in self.service_health
+                and service_url in self.service_health[service_name]
+            ):
                 del self.service_health[service_name][service_url]
 
             # 更新权重
-            if service_name in self.service_weights and service_url in self.service_weights[
-                service_name]:
+            if (
+                service_name in self.service_weights
+                and service_url in self.service_weights[service_name]
+            ):
                 del self.service_weights[service_name][service_url]
 
             # 更新调用计数
-            if service_name in self.service_calls and service_url in self.service_calls[
-                service_name]:
+            if (
+                service_name in self.service_calls
+                and service_url in self.service_calls[service_name]
+            ):
                 del self.service_calls[service_name][service_url]
 
             logger.info(f"注销服务: {service_name} - {service_url}")
@@ -165,14 +175,16 @@ class ServiceDiscovery:
         # 更新调用计数
         url = selected["url"]
         if service_name in self.service_calls:
-            self.service_calls[service_name][url] = self.service_calls[service_name].get(
-                url, 0) + 1
+            self.service_calls[service_name][url] = (
+                self.service_calls[service_name].get(url, 0) + 1
+            )
 
         logger.debug(f"选择服务: {service_name} - {url}")
         return url
 
-    def update_service_health(self, service_name: str,
-                              service_url: str, is_healthy: bool):
+    def update_service_health(
+        self, service_name: str, service_url: str, is_healthy: bool
+    ):
         """更新服务健康状态
 
         Args:
@@ -212,8 +224,12 @@ class ServiceDiscovery:
         """
         return {
             "total_instances": len(self.services.get(service_name, [])),
-            "healthy_instances": sum(1 for is_healthy in self.service_health.get(service_name, {}).values() if is_healthy),
-            "calls": self.service_calls.get(service_name, {})
+            "healthy_instances": sum(
+                1
+                for is_healthy in self.service_health.get(service_name, {}).values()
+                if is_healthy
+            ),
+            "calls": self.service_calls.get(service_name, {}),
         }
 
     def list_services(self) -> Dict[str, List[Dict[str, Any]]]:
@@ -231,7 +247,7 @@ class ServiceDiscovery:
             "memory_service": [],
             "cognition_service": [],
             "vision_service": [],
-            "multimodal_service": []
+            "multimodal_service": [],
         }
         self.service_health = {}
         self.service_weights = {}

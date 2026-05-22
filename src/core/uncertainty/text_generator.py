@@ -5,11 +5,12 @@
 集成LLM生成文本响应，并支持置信度评分
 """
 
-import logging
 import json
-import httpx
-from typing import Dict, List, Optional, Any
+import logging
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import httpx
 
 # 配置日志
 logging.basicConfig(
@@ -24,8 +25,11 @@ class TextGenerator:
     集成LLM生成文本响应，支持多种生成策略
     """
 
-    def __init__(self, ollama_url: str = "http://localhost:11434",
-                 default_model: str = "deepseek-r1:7b"):
+    def __init__(
+        self,
+        ollama_url: str = "http://localhost:11434",
+        default_model: str = "deepseek-r1:7b",
+    ):
         """初始化文本生成器
 
         Args:
@@ -45,7 +49,7 @@ class TextGenerator:
         model: Optional[str] = None,
         max_tokens: int = 500,
         temperature: float = 0.7,
-        include_confidence: bool = True
+        include_confidence: bool = True,
     ) -> Dict[str, Any]:
         """生成文本响应
 
@@ -72,7 +76,7 @@ class TextGenerator:
                 messages=messages,
                 model=model_name,
                 max_tokens=max_tokens,
-                temperature=temperature
+                temperature=temperature,
             )
 
             # 提取生成的文本
@@ -85,16 +89,19 @@ class TextGenerator:
                 "prompt": prompt,
                 "generation_time": (datetime.now() - start_time).total_seconds(),
                 "timestamp": datetime.now().isoformat(),
-                "raw_response": raw_response if include_confidence else None
+                "raw_response": raw_response if include_confidence else None,
             }
 
             # 如果需要置信度评分，调用置信度评分器
             if include_confidence:
                 from .confidence_scorer import confidence_scorer
-                confidence_result = await confidence_scorer.score_text_generation_confidence(
-                    prompt=prompt,
-                    generated_text=generated_text,
-                    model_output=raw_response
+
+                confidence_result = (
+                    await confidence_scorer.score_text_generation_confidence(
+                        prompt=prompt,
+                        generated_text=generated_text,
+                        model_output=raw_response,
+                    )
                 )
                 result["confidence"] = confidence_result
 
@@ -112,11 +119,15 @@ class TextGenerator:
                 "prompt": prompt,
                 "error": str(e),
                 "timestamp": datetime.now().isoformat(),
-                "confidence": {
-                    "confidence_score": 0.0,
-                    "confidence_level": "error",
-                    "factor_scores": {}
-                } if include_confidence else None
+                "confidence": (
+                    {
+                        "confidence_score": 0.0,
+                        "confidence_level": "error",
+                        "factor_scores": {},
+                    }
+                    if include_confidence
+                    else None
+                ),
             }
 
     async def generate_with_uncertainty_handling(
@@ -124,7 +135,7 @@ class TextGenerator:
         prompt: str,
         context: Optional[List[Dict[str, Any]]] = None,
         confidence_threshold: float = 0.6,
-        fallback_response: str = "我不确定如何回答这个问题。您能提供更多背景信息吗？"
+        fallback_response: str = "我不确定如何回答这个问题。您能提供更多背景信息吗？",
     ) -> Dict[str, Any]:
         """生成文本响应，并处理不确定性
 
@@ -139,19 +150,17 @@ class TextGenerator:
         """
         # 首先生成响应
         result = await self.generate_response(
-            prompt=prompt,
-            context=context,
-            include_confidence=True
+            prompt=prompt, context=context, include_confidence=True
         )
 
         # 检查置信度
-        confidence_score = result.get(
-            "confidence", {}).get("confidence_score", 0.0)
+        confidence_score = result.get("confidence", {}).get("confidence_score", 0.0)
 
         if confidence_score < confidence_threshold:
             # 低置信度，使用备用响应
             uncertainty_type = self._determine_uncertainty_type(
-                result.get("confidence", {}))
+                result.get("confidence", {})
+            )
 
             result["original_text"] = result["text"]
             result["text"] = fallback_response
@@ -161,12 +170,14 @@ class TextGenerator:
             result["original_confidence"] = confidence_score
 
             logger.info(
-                f"低置信度处理: {confidence_score:.3f} < {confidence_threshold}, 类型: {uncertainty_type}")
+                f"低置信度处理: {confidence_score:.3f} < {confidence_threshold}, 类型: {uncertainty_type}"
+            )
 
         return result
 
     def _build_messages(
-        self, prompt: str, context: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+        self, prompt: str, context: Optional[List[Dict[str, Any]]]
+    ) -> List[Dict[str, Any]]:
         """构建消息列表
 
         Args:
@@ -181,10 +192,8 @@ class TextGenerator:
         # 添加上下文消息
         if context:
             for msg in context[-10:]:  # 最多保留10条上下文
-                if isinstance(
-                    msg, dict) and "role" in msg and "content" in msg:
-                    messages.append(
-                        {"role": msg["role"], "content": msg["content"]})
+                if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                    messages.append({"role": msg["role"], "content": msg["content"]})
 
         # 添加当前提示
         messages.append({"role": "user", "content": prompt})
@@ -196,7 +205,7 @@ class TextGenerator:
         messages: List[Dict[str, Any]],
         model: str,
         max_tokens: int = 500,
-        temperature: float = 0.7
+        temperature: float = 0.7,
     ) -> Dict[str, Any]:
         """调用Ollama API
 
@@ -219,8 +228,8 @@ class TextGenerator:
                 "num_predict": max_tokens,
                 "temperature": temperature,
                 "top_p": 0.9,
-                "repeat_penalty": 1.1
-            }
+                "repeat_penalty": 1.1,
+            },
         }
 
         try:
@@ -239,7 +248,7 @@ class TextGenerator:
                     "prompt_eval_count": data.get("prompt_eval_count", 0),
                     "prompt_eval_duration": data.get("prompt_eval_duration", 0),
                     "eval_count": data.get("eval_count", 0),
-                    "eval_duration": data.get("eval_duration", 0)
+                    "eval_duration": data.get("eval_duration", 0),
                 }
 
                 return api_result
@@ -271,14 +280,14 @@ class TextGenerator:
         if "content" in response_str:
             # 简单提取
             import re
+
             match = re.search(r'"content":\s*"([^"]+)"', response_str)
             if match:
                 return match.group(1).strip()
 
         return "无法提取生成文本"
 
-    def _determine_uncertainty_type(
-        self, confidence_result: Dict[str, Any]) -> str:
+    def _determine_uncertainty_type(self, confidence_result: Dict[str, Any]) -> str:
         """确定不确定性类型
 
         Args:

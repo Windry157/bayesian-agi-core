@@ -5,11 +5,11 @@
 收集用户反馈以改进置信度评分模型
 """
 
-import logging
 import json
-from typing import Dict, List, Optional, Any
+import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # 配置日志
 logging.basicConfig(
@@ -47,7 +47,7 @@ class FeedbackCollector:
         feedback_type: str,
         feedback_details: Optional[Dict[str, Any]] = None,
         confidence_score: Optional[float] = None,
-        user_correction: Optional[str] = None
+        user_correction: Optional[str] = None,
     ) -> Dict[str, Any]:
         """提交反馈
 
@@ -66,7 +66,11 @@ class FeedbackCollector:
         try:
             # 验证反馈类型
             valid_feedback_types = [
-                "correct", "incorrect", "uncertain", "needs_improvement"]
+                "correct",
+                "incorrect",
+                "uncertain",
+                "needs_improvement",
+            ]
             if feedback_type not in valid_feedback_types:
                 raise ValueError(f"无效的反馈类型，必须是: {valid_feedback_types}")
 
@@ -88,8 +92,8 @@ class FeedbackCollector:
                 "metadata": {
                     "response_has_confidence": "confidence" in system_response,
                     "response_has_answer": "answer" in system_response,
-                    "response_type": type(system_response).__name__
-                }
+                    "response_type": type(system_response).__name__,
+                },
             }
 
             # 保存反馈记录
@@ -102,13 +106,14 @@ class FeedbackCollector:
             await self._analyze_feedback_for_improvement(feedback_record)
 
             logger.info(
-                f"反馈提交成功: {feedback_type}, ID: {feedback_record['feedback_id']}")
+                f"反馈提交成功: {feedback_type}, ID: {feedback_record['feedback_id']}"
+            )
 
             return {
                 "success": True,
                 "feedback_id": feedback_record["feedback_id"],
                 "message": "反馈已成功提交，将用于改进系统",
-                "timestamp": feedback_record["timestamp"]
+                "timestamp": feedback_record["timestamp"],
             }
 
         except Exception as e:
@@ -116,7 +121,7 @@ class FeedbackCollector:
             return {
                 "success": False,
                 "error": str(e),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
     async def get_feedback_stats(self) -> Dict[str, Any]:
@@ -135,10 +140,12 @@ class FeedbackCollector:
             by_type[ftype] = by_type.get(ftype, 0) + 1
 
         # 计算平均置信度
-        confidence_scores = [f.get("confidence_score", 0.5)
-                             for f in self.feedback_history]
-        avg_confidence = sum(confidence_scores) / \
-        len(confidence_scores) if confidence_scores else 0
+        confidence_scores = [
+            f.get("confidence_score", 0.5) for f in self.feedback_history
+        ]
+        avg_confidence = (
+            sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0
+        )
 
         # 计算准确性（基于正确/不正确反馈）
         correct_count = by_type.get("correct", 0)
@@ -156,12 +163,17 @@ class FeedbackCollector:
             "incorrect_count": incorrect_count,
             "uncertain_count": by_type.get("uncertain", 0),
             "needs_improvement_count": by_type.get("needs_improvement", 0),
-            "first_feedback": self.feedback_history[0]["timestamp"] if self.feedback_history else None,
-            "last_feedback": self.feedback_history[-1]["timestamp"] if self.feedback_history else None
+            "first_feedback": (
+                self.feedback_history[0]["timestamp"] if self.feedback_history else None
+            ),
+            "last_feedback": (
+                self.feedback_history[-1]["timestamp"]
+                if self.feedback_history
+                else None
+            ),
         }
 
-    async def get_feedback_for_confidence_calibration(
-        self) -> List[Dict[str, Any]]:
+    async def get_feedback_for_confidence_calibration(self) -> List[Dict[str, Any]]:
         """获取用于置信度校准的反馈
 
         Returns:
@@ -172,13 +184,15 @@ class FeedbackCollector:
 
         for feedback in self.feedback_history:
             if feedback["feedback_type"] in ["correct", "incorrect"]:
-                calibration_feedback.append({
-                    "feedback_id": feedback["feedback_id"],
-                    "input_text": feedback["input_text"],
-                    "confidence_score": feedback["confidence_score"],
-                    "was_correct": feedback["feedback_type"] == "correct",
-                    "timestamp": feedback["timestamp"]
-                })
+                calibration_feedback.append(
+                    {
+                        "feedback_id": feedback["feedback_id"],
+                        "input_text": feedback["input_text"],
+                        "confidence_score": feedback["confidence_score"],
+                        "was_correct": feedback["feedback_type"] == "correct",
+                        "timestamp": feedback["timestamp"],
+                    }
+                )
 
         return calibration_feedback
 
@@ -198,7 +212,7 @@ class FeedbackCollector:
             filename = f"{feedback_record['feedback_id']}.json"
             filepath = date_dir / filename
 
-            with open(filepath, 'w', encoding='utf-8') as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(feedback_record, f, ensure_ascii=False, indent=2)
 
             logger.debug(f"反馈记录保存到: {filepath}")
@@ -206,8 +220,7 @@ class FeedbackCollector:
         except Exception as e:
             logger.error(f"保存反馈记录失败: {e}")
 
-    async def _analyze_feedback_for_improvement(
-        self, feedback_record: Dict[str, Any]):
+    async def _analyze_feedback_for_improvement(self, feedback_record: Dict[str, Any]):
         """分析反馈以改进置信度模型
 
         Args:
@@ -220,7 +233,9 @@ class FeedbackCollector:
             # 根据反馈类型分析置信度模型问题
             if feedback_type == "incorrect" and confidence_score > 0.7:
                 # 高置信度但答案错误：模型过度自信
-                logger.warning(f"检测到过度自信: 置信度={confidence_score:.3f} 但答案错误")
+                logger.warning(
+                    f"检测到过度自信: 置信度={confidence_score:.3f} 但答案错误"
+                )
 
                 # 记录过度自信案例
                 overconfidence_record = {
@@ -229,14 +244,18 @@ class FeedbackCollector:
                     "confidence_score": confidence_score,
                     "expected_confidence": 0.3,  # 应该更低的置信度
                     "discrepancy": confidence_score - 0.3,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
-                await self._save_analysis_record(overconfidence_record, "overconfidence")
+                await self._save_analysis_record(
+                    overconfidence_record, "overconfidence"
+                )
 
             elif feedback_type == "correct" and confidence_score < 0.4:
                 # 低置信度但答案正确：模型信心不足
-                logger.warning(f"检测到信心不足: 置信度={confidence_score:.3f} 但答案正确")
+                logger.warning(
+                    f"检测到信心不足: 置信度={confidence_score:.3f} 但答案正确"
+                )
 
                 underconfidence_record = {
                     "type": "underconfidence",
@@ -244,10 +263,12 @@ class FeedbackCollector:
                     "confidence_score": confidence_score,
                     "expected_confidence": 0.7,  # 应该更高的置信度
                     "discrepancy": 0.7 - confidence_score,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
-                await self._save_analysis_record(underconfidence_record, "underconfidence")
+                await self._save_analysis_record(
+                    underconfidence_record, "underconfidence"
+                )
 
             elif feedback_type == "uncertain":
                 # 用户标记为不确定：需要改进不确定性表达
@@ -258,7 +279,7 @@ class FeedbackCollector:
                     "original_feedback_id": feedback_record["feedback_id"],
                     "system_confidence": confidence_score,
                     "user_perception": "uncertain",
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
                 await self._save_analysis_record(uncertainty_record, "uncertainty")
@@ -266,8 +287,7 @@ class FeedbackCollector:
         except Exception as e:
             logger.error(f"反馈分析失败: {e}")
 
-    async def _save_analysis_record(
-        self, record: Dict[str, Any], category: str):
+    async def _save_analysis_record(self, record: Dict[str, Any], category: str):
         """保存分析记录
 
         Args:
@@ -284,7 +304,7 @@ class FeedbackCollector:
             datetime.now().timestamp())}.json"
             filepath = analysis_dir / filename
 
-            with open(filepath, 'w', encoding='utf-8') as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(record, f, ensure_ascii=False, indent=2)
 
         except Exception as e:
@@ -298,7 +318,7 @@ class FeedbackCollector:
 
             for filepath in feedback_files:
                 try:
-                    with open(filepath, 'r', encoding='utf-8') as f:
+                    with open(filepath, "r", encoding="utf-8") as f:
                         feedback_record = json.load(f)
 
                     self.feedback_history.append(feedback_record)
@@ -315,8 +335,7 @@ class FeedbackCollector:
             logger.error(f"加载反馈历史失败: {e}")
             self.feedback_history = []
 
-    async def clear_feedback_history(
-        self, confirm: bool = False) -> Dict[str, Any]:
+    async def clear_feedback_history(self, confirm: bool = False) -> Dict[str, Any]:
         """清空反馈历史（谨慎使用）
 
         Args:
@@ -326,10 +345,7 @@ class FeedbackCollector:
             操作结果
         """
         if not confirm:
-            return {
-                "success": False,
-                "message": "请设置confirm=true以确认清空反馈历史"
-            }
+            return {"success": False, "message": "请设置confirm=true以确认清空反馈历史"}
 
         try:
             # 备份当前历史
@@ -346,15 +362,12 @@ class FeedbackCollector:
             return {
                 "success": True,
                 "message": f"已清空内存中的反馈历史，备份记录数: {backup_count}",
-                "backup_count": backup_count
+                "backup_count": backup_count,
             }
 
         except Exception as e:
             logger.error(f"清空反馈历史失败: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
 
 # 全局反馈收集器实例

@@ -6,7 +6,4 @@
 
 from .knowledge_graph import KnowledgeGraph, knowledge_graph
 
-__all__ = [
-    "KnowledgeGraph",
-    "knowledge_graph"
-]
+__all__ = ["KnowledgeGraph", "knowledge_graph"]

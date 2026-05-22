@@ -4,8 +4,10 @@
 Ollama LLM服务
 """
 
+from typing import Any, AsyncGenerator, Dict, List
+
 import httpx
-from typing import List, Dict, AsyncGenerator, Any
+
 from ..interfaces import ILLMService
 
 
@@ -34,8 +36,7 @@ class OllamaLLM(ILLMService):
             流式生成的响应
         """
         url = f"{self.ollama_url}/api/chat"
-        payload = {"model": self.default_model,
-                   "messages": messages, "stream": True}
+        payload = {"model": self.default_model, "messages": messages, "stream": True}
 
         async with httpx.AsyncClient() as client:
             async with client.stream("POST", url, json=payload) as response:

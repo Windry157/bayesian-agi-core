@@ -1,5 +1,6 @@
-from fastapi.testclient import TestClient
 from unittest.mock import patch
+
+from fastapi.testclient import TestClient
 
 from src.main import app
 
@@ -27,7 +28,7 @@ class TestAPIEndpoints:
         assert data["message"] == "Welcome to Bayesian-AGI-Core"
         assert data["version"] == "1.0.0"
 
-    @patch('src.main.assistant.get_models')
+    @patch("src.main.assistant.get_models")
     def test_models_endpoint(self, mock_get_models):
         """测试模型列表端点"""
         mock_get_models.return_value = [
@@ -40,7 +41,7 @@ class TestAPIEndpoints:
         assert len(data["models"]) == 1
         assert data["models"][0]["name"] == "deepseek-r1:7b"
 
-    @patch('src.main.assistant.add_memory')
+    @patch("src.main.assistant.add_memory")
     def test_add_memory_endpoint(self, mock_add_memory):
         """测试添加记忆端点"""
         mock_add_memory.return_value = "mem_123"
@@ -51,7 +52,7 @@ class TestAPIEndpoints:
         assert data["id"] == "mem_123"
         assert "Memory added successfully" in data["message"]
 
-    @patch('src.main.assistant.retrieve_memories')
+    @patch("src.main.assistant.retrieve_memories")
     def test_search_memory_endpoint(self, mock_retrieve_memories):
         """测试检索记忆端点"""
         mock_retrieve_memories.return_value = [
@@ -64,7 +65,7 @@ class TestAPIEndpoints:
         assert len(data["memories"]) == 1
         assert data["memories"][0]["content"] == "测试记忆"
 
-    @patch('src.main.assistant.make_decision')
+    @patch("src.main.assistant.make_decision")
     def test_decision_endpoint(self, mock_make_decision):
         """测试决策端点"""
         mock_make_decision.return_value = "action_1"
@@ -82,8 +83,7 @@ class TestErrorHandling:
         """测试前设置"""
         self.client = TestClient(app)
 
-    @patch('src.main.assistant.add_memory',
-           side_effect=Exception("Database error"))
+    @patch("src.main.assistant.add_memory", side_effect=Exception("Database error"))
     def test_add_memory_error_handling(self, mock_add_memory):
         """测试添加记忆错误处理"""
         payload = {"content": "测试内容"}
@@ -92,8 +92,9 @@ class TestErrorHandling:
         data = response.json()
         assert "Failed to add memory" in data["detail"]
 
-    @patch('src.main.assistant.retrieve_memories',
-           side_effect=Exception("Search error"))
+    @patch(
+        "src.main.assistant.retrieve_memories", side_effect=Exception("Search error")
+    )
     def test_search_memory_error_handling(self, mock_retrieve_memories):
         """测试检索记忆错误处理"""
         response = self.client.get("/api/memory/search?query=test")
@@ -101,8 +102,7 @@ class TestErrorHandling:
         data = response.json()
         assert "Failed to search memory" in data["detail"]
 
-    @patch('src.main.assistant.make_decision',
-           side_effect=Exception("Decision error"))
+    @patch("src.main.assistant.make_decision", side_effect=Exception("Decision error"))
     def test_decision_error_handling(self, mock_make_decision):
         """测试决策错误处理"""
         payload = ["action_1"]

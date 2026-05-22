@@ -8,16 +8,16 @@
 import json
 import logging
 import os
-import time
 import statistics
+import time
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
-from src.core.memory.state_persistence import StatePersistence
-from src.core.memory.context_bridge import ContextBridge
-from src.core.memory.memory_system import MemorySystem
 from src.core.cognition.cognition_coordinator import CognitionCoordinator
 from src.core.learning.learning_manager import LearningManager
+from src.core.memory.context_bridge import ContextBridge
+from src.core.memory.memory_system import MemorySystem
+from src.core.memory.state_persistence import StatePersistence
 from src.core.monitoring import SystemMonitor
 from src.core.safety.constraint_enforcement import ConstraintEnforcement
 from src.core.uncertainty import confidence_scorer, response_wrapper
@@ -57,7 +57,7 @@ class Consciousness:
             "accuracy": [],
             "learning_rate": [],
             "confidence": [],
-            "response_time": []
+            "response_time": [],
         }
 
         # 自我修复状态
@@ -65,7 +65,7 @@ class Consciousness:
             "system_health": "healthy",
             "component_status": {},
             "last_checkup": datetime.now().isoformat(),
-            "issues": []
+            "issues": [],
         }
 
         # 自我学习计划
@@ -76,7 +76,7 @@ class Consciousness:
             "short_term_ttl": 3600,  # 1小时
             "medium_term_ttl": 86400,  # 1天
             "long_term_ttl": 2592000,  # 30天
-            "embedding_model": "ollama:nomic-embed-text"
+            "embedding_model": "ollama:nomic-embed-text",
         }
 
         logger.info("意识系统初始化完成")
@@ -102,8 +102,9 @@ class Consciousness:
             logger.error(f"意识系统初始化失败: {e}")
             raise
 
-    async def process_thought(self, input_text: str,
-                              session_id: str = "default") -> Dict[str, Any]:
+    async def process_thought(
+        self, input_text: str, session_id: str = "default"
+    ) -> Dict[str, Any]:
         """处理连续思维
 
         Args:
@@ -117,10 +118,14 @@ class Consciousness:
             start_time = time.time()
 
             # 1. 打破会话隔离：加载相关上下文
-            context = await self.context_bridge.load_relevant_context(session_id, input_text)
+            context = await self.context_bridge.load_relevant_context(
+                session_id, input_text
+            )
 
             # 2. 检索永久记忆
-            relevant_memories = await self.memory_system.retrieve_memories(input_text, top_k=5)
+            relevant_memories = await self.memory_system.retrieve_memories(
+                input_text, top_k=5
+            )
 
             # 3. 构建连续思维链
             thought_chain = await self._build_thought_chain(
@@ -132,11 +137,10 @@ class Consciousness:
                 "input": input_text,
                 "context": context,
                 "memories": relevant_memories,
-                "thought_chain": thought_chain
+                "thought_chain": thought_chain,
             }
 
-            decision = self.cognition_coordinator.make_decision(
-                decision_context)
+            decision = self.cognition_coordinator.make_decision(decision_context)
 
             # 5. 更新连续思维流
             thought_entry = {
@@ -145,7 +149,7 @@ class Consciousness:
                 "input": input_text,
                 "thought_chain": thought_chain,
                 "decision": decision,
-                "context_summary": self._summarize_context(context)
+                "context_summary": self._summarize_context(context),
             }
 
             self.continuous_thoughts.append(thought_entry)
@@ -161,10 +165,12 @@ class Consciousness:
             await self._check_and_repair()
 
             # 9. 更新状态
-            await self.state_persistence.update_state({
-                "accuracy": decision.get("confidence", 0.5),
-                "response_time": time.time() - start_time
-            })
+            await self.state_persistence.update_state(
+                {
+                    "accuracy": decision.get("confidence", 0.5),
+                    "response_time": time.time() - start_time,
+                }
+            )
 
             # 构建响应
             response = {
@@ -173,14 +179,16 @@ class Consciousness:
                 "context_used": self._summarize_context(context),
                 "memories_used": len(relevant_memories),
                 "continuous_thought_id": len(self.continuous_thoughts),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
             # 计算置信度评分
             confidence_result = await confidence_scorer.score_decision_confidence(
                 decision_context=decision_context,
                 relevant_memories=relevant_memories,
-                knowledge_coverage=await self._estimate_knowledge_coverage(decision, thought_chain)
+                knowledge_coverage=await self._estimate_knowledge_coverage(
+                    decision, thought_chain
+                ),
             )
 
             # 添加置信度信息到响应
@@ -192,30 +200,34 @@ class Consciousness:
             standardized_response = await response_wrapper.wrap_consciousness_response(
                 consciousness_result=response,
                 input_text=input_text,
-                session_id=session_id
+                session_id=session_id,
             )
 
             response["standardized_response"] = standardized_response
 
             # 生成用户友好的可视化展示
             from src.core.uncertainty.confidence_visualizer import confidence_visualizer
+
             response["visualization"] = confidence_visualizer.visualize_confidence(
                 confidence_score=confidence_result["confidence_score"],
                 confidence_level=confidence_result["confidence_level"],
                 confidence_details=confidence_result,
                 input_text=input_text,
-                response_text=standardized_response.get("answer", "")
+                response_text=standardized_response.get("answer", ""),
             )
-            response["display_text"] = confidence_visualizer.format_response_for_display(
-                answer=standardized_response.get("answer", ""),
-                confidence_score=confidence_result["confidence_score"],
-                confidence_level=confidence_result["confidence_level"],
-                confidence_details=confidence_result,
-                include_guidance=True
+            response["display_text"] = (
+                confidence_visualizer.format_response_for_display(
+                    answer=standardized_response.get("answer", ""),
+                    confidence_score=confidence_result["confidence_score"],
+                    confidence_level=confidence_result["confidence_level"],
+                    confidence_details=confidence_result,
+                    include_guidance=True,
+                )
             )
 
             logger.info(
-                f"连续思维处理完成: {len(thought_chain)} 步思维链, 置信度: {confidence_result['confidence_score']:.3f}")
+                f"连续思维处理完成: {len(thought_chain)} 步思维链, 置信度: {confidence_result['confidence_score']:.3f}"
+            )
             return response
 
         except Exception as e:
@@ -225,7 +237,11 @@ class Consciousness:
             return {"error": str(e), "thought_chain": []}
 
     async def _build_thought_chain(
-        self, input_text: str, context: Dict[str, Any], memories: List[Dict[str, Any]], session_id: str
+        self,
+        input_text: str,
+        context: Dict[str, Any],
+        memories: List[Dict[str, Any]],
+        session_id: str,
     ) -> List[Dict[str, Any]]:
         """构建连续思维链
 
@@ -241,51 +257,61 @@ class Consciousness:
         thought_chain = []
 
         # 思维步骤1：理解当前输入
-        thought_chain.append({
-            "step": 1,
-            "type": "understanding",
-            "content": f"理解输入: {input_text}",
-            "reasoning": "分析输入内容，提取关键信息",
-            "timestamp": datetime.now().isoformat()
-        })
+        thought_chain.append(
+            {
+                "step": 1,
+                "type": "understanding",
+                "content": f"理解输入: {input_text}",
+                "reasoning": "分析输入内容，提取关键信息",
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
         # 思维步骤2：连接上下文
         if context.get("relevant_history"):
-            thought_chain.append({
-                "step": 2,
-                "type": "context_linking",
-                "content": "连接历史上下文",
-                "reasoning": f"连接 {len(context['relevant_history'])} 条相关历史",
-                "timestamp": datetime.now().isoformat()
-            })
+            thought_chain.append(
+                {
+                    "step": 2,
+                    "type": "context_linking",
+                    "content": "连接历史上下文",
+                    "reasoning": f"连接 {len(context['relevant_history'])} 条相关历史",
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
 
         # 思维步骤3：检索永久记忆
         if memories:
-            thought_chain.append({
-                "step": 3,
-                "type": "memory_recall",
-                "content": "检索永久记忆",
-                "reasoning": f"检索到 {len(memories)} 条相关永久记忆",
-                "timestamp": datetime.now().isoformat()
-            })
+            thought_chain.append(
+                {
+                    "step": 3,
+                    "type": "memory_recall",
+                    "content": "检索永久记忆",
+                    "reasoning": f"检索到 {len(memories)} 条相关永久记忆",
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
 
         # 思维步骤4：分析思维模式
-        thought_chain.append({
-            "step": 4,
-            "type": "pattern_analysis",
-            "content": "分析思维模式",
-            "reasoning": "识别当前问题与历史解决方案的相似性",
-            "timestamp": datetime.now().isoformat()
-        })
+        thought_chain.append(
+            {
+                "step": 4,
+                "type": "pattern_analysis",
+                "content": "分析思维模式",
+                "reasoning": "识别当前问题与历史解决方案的相似性",
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
         # 思维步骤5：生成综合理解
-        thought_chain.append({
-            "step": 5,
-            "type": "synthesis",
-            "content": "生成综合理解",
-            "reasoning": "整合所有信息，形成完整理解",
-            "timestamp": datetime.now().isoformat()
-        })
+        thought_chain.append(
+            {
+                "step": 5,
+                "type": "synthesis",
+                "content": "生成综合理解",
+                "reasoning": "整合所有信息，形成完整理解",
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
 
         return thought_chain
 
@@ -301,8 +327,10 @@ class Consciousness:
             metadata = {
                 "session_id": thought_entry.get("session_id"),
                 "timestamp": thought_entry.get("timestamp"),
-                "decision_confidence": thought_entry.get("decision", {}).get("confidence", 0.5),
-                "continuous_thought_id": len(self.continuous_thoughts)
+                "decision_confidence": thought_entry.get("decision", {}).get(
+                    "confidence", 0.5
+                ),
+                "continuous_thought_id": len(self.continuous_thoughts),
             }
 
             # 添加到记忆系统
@@ -314,7 +342,8 @@ class Consciousness:
             logger.error(f"更新永久记忆失败: {e}")
 
     async def _evolve_and_learn(
-        self, thought_entry: Dict[str, Any], decision: Dict[str, Any]):
+        self, thought_entry: Dict[str, Any], decision: Dict[str, Any]
+    ):
         """自我进化与学习
 
         Args:
@@ -346,7 +375,8 @@ class Consciousness:
             logger.error(f"自我进化与学习失败: {e}")
 
     def _collect_evolution_metrics(
-        self, thought_entry: Dict[str, Any], decision: Dict[str, Any]):
+        self, thought_entry: Dict[str, Any], decision: Dict[str, Any]
+    ):
         """收集进化指标
 
         Args:
@@ -355,9 +385,9 @@ class Consciousness:
         """
         # 性能指标
         confidence = decision.get("confidence", 0.5)
-        response_time = time.time() - \
-        datetime.fromisoformat(
-                                      thought_entry["timestamp"]).timestamp()
+        response_time = (
+            time.time() - datetime.fromisoformat(thought_entry["timestamp"]).timestamp()
+        )
 
         self.evolution_metrics["confidence"].append(confidence)
         self.evolution_metrics["response_time"].append(response_time)
@@ -376,7 +406,7 @@ class Consciousness:
         analysis = {
             "needs_optimization": False,
             "trend": "stable",
-            "recommendations": []
+            "recommendations": [],
         }
 
         if len(self.evolution_metrics["confidence"]) < 10:
@@ -415,7 +445,7 @@ class Consciousness:
                 "timestamp": datetime.now().isoformat(),
                 "analysis": analysis,
                 "actions_taken": [],
-                "optimization_id": f"opt_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                "optimization_id": f"opt_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             }
 
             # 保存优化记录
@@ -424,8 +454,7 @@ class Consciousness:
         except Exception as e:
             logger.error(f"算法优化失败: {e}")
 
-    def _identify_knowledge_gaps(
-        self, thought_entry: Dict[str, Any]) -> List[str]:
+    def _identify_knowledge_gaps(self, thought_entry: Dict[str, Any]) -> List[str]:
         """识别知识空白
 
         Args:
@@ -457,16 +486,14 @@ class Consciousness:
                     "gap": gap,
                     "timestamp": datetime.now().isoformat(),
                     "status": "initiated",
-                    "learning_method": "knowledge_acquisition"
+                    "learning_method": "knowledge_acquisition",
                 }
 
                 self.learning_plans.append(learning_plan)
 
                 # 调用学习管理器
                 await self.learning_manager.initiate_learning(
-                    topic=gap,
-                    learning_type="active",
-                    priority="medium"
+                    topic=gap, learning_type="active", priority="medium"
                 )
 
             logger.info(f"启动主动学习: {len(knowledge_gaps)} 个知识空白")
@@ -478,7 +505,9 @@ class Consciousness:
         """元学习 - 改进学习策略"""
         try:
             # 分析学习效果
-            learning_efficiency = await self.learning_manager.analyze_learning_efficiency()
+            learning_efficiency = (
+                await self.learning_manager.analyze_learning_efficiency()
+            )
 
             if learning_efficiency.get("needs_improvement"):
                 # 调整学习策略
@@ -521,7 +550,9 @@ class Consciousness:
                     repair_actions.append("重置记忆系统")
                 elif "performance" in issue.lower():
                     # 优化性能
-                    await self._optimize_algorithms({"needs_optimization": True, "recommendations": ["性能优化"]})
+                    await self._optimize_algorithms(
+                        {"needs_optimization": True, "recommendations": ["性能优化"]}
+                    )
                     repair_actions.append("优化性能")
 
             if repair_actions:
@@ -570,11 +601,12 @@ class Consciousness:
             "session_context": bool(context.get("session_context")),
             "global_context": bool(context.get("global_context")),
             "relevant_history_count": len(context.get("relevant_history", [])),
-            "timestamp": context.get("timestamp", datetime.now().isoformat())
+            "timestamp": context.get("timestamp", datetime.now().isoformat()),
         }
 
     async def _estimate_knowledge_coverage(
-        self, decision: Dict[str, Any], thought_chain: List[Dict[str, Any]]) -> float:
+        self, decision: Dict[str, Any], thought_chain: List[Dict[str, Any]]
+    ) -> float:
         """估计知识覆盖率
 
         Args:
@@ -644,7 +676,7 @@ class Consciousness:
             filename = f"{record['optimization_id']}.json"
             filepath = os.path.join(optimization_dir, filename)
 
-            with open(filepath, 'w', encoding='utf-8') as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(record, f, ensure_ascii=False, indent=2)
 
         except Exception as e:
@@ -663,19 +695,21 @@ class Consciousness:
             "evolution_metrics": {k: len(v) for k, v in self.evolution_metrics.items()},
             "health_status": self.health_status,
             "learning_plans_count": len(self.learning_plans),
-            "last_update": datetime.now().isoformat()
+            "last_update": datetime.now().isoformat(),
         }
 
     async def save_state(self):
         """保存状态"""
         try:
             # 保存认知状态
-            await self.state_persistence.update_state({
-                "continuous_thoughts": self.continuous_thoughts,
-                "evolution_metrics": self.evolution_metrics,
-                "health_status": self.health_status,
-                "timestamp": datetime.now().isoformat()
-            })
+            await self.state_persistence.update_state(
+                {
+                    "continuous_thoughts": self.continuous_thoughts,
+                    "evolution_metrics": self.evolution_metrics,
+                    "health_status": self.health_status,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
 
             # 保存记忆
             await self.memory_system._save_to_disk()

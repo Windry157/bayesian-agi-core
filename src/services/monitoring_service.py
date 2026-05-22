@@ -6,9 +6,11 @@
 """
 
 import asyncio
-import psutil
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
+
+import psutil
+
 from src.core.monitoring import monitoring
 from src.utils.high_availability import high_availability_manager
 
@@ -78,16 +80,17 @@ class MonitoringService:
             monitoring.record_memory_usage(memory.used)
 
             # 收集系统负载
-            if hasattr(psutil, 'getloadavg'):
+            if hasattr(psutil, "getloadavg"):
                 load_avg = psutil.getloadavg()[0]
                 monitoring.record_system_load(load_avg)
 
             # 收集磁盘使用情况
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
             monitoring.record_disk_usage(disk.percent)
 
             logger.debug(
-                f"系统指标收集完成: CPU={cpu_usage}%, 内存={memory.used/1024/1024:.2f}MB, 磁盘={disk.percent}%")
+                f"系统指标收集完成: CPU={cpu_usage}%, 内存={memory.used/1024/1024:.2f}MB, 磁盘={disk.percent}%"
+            )
 
         except Exception as e:
             logger.error(f"收集系统指标失败: {e}")
@@ -121,7 +124,7 @@ class MonitoringService:
             # 收集系统信息
             cpu_usage = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
 
             # 获取服务可用性
             availability = high_availability_manager.get_service_availability()
@@ -133,9 +136,11 @@ class MonitoringService:
                     "memory_percent": memory.percent,
                     "disk_usage": disk.used,
                     "disk_percent": disk.percent,
-                    "load_avg": psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0
+                    "load_avg": (
+                        psutil.getloadavg()[0] if hasattr(psutil, "getloadavg") else 0
+                    ),
                 },
-                "services": availability
+                "services": availability,
             }
 
         except Exception as e:
