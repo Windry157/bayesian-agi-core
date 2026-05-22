@@ -5,7 +5,9 @@ class ContextBridge:
     def __init__(self):
         self._contexts: Dict[str, Any] = {}
 
-    async def load_relevant_context(self, session_id: str, input_text: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    async def load_relevant_context(
+        self, session_id: str, input_text: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
         return self._contexts.get(session_id)
 
     async def update_session_context(self, session_id: str, context: Dict[str, Any]):
