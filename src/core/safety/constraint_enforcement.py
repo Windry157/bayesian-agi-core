@@ -314,3 +314,4 @@ class ConstraintEnforcementModule:
 
 # 全局约束执行模块实例
 constraint_enforcement = ConstraintEnforcementModule()
+ConstraintEnforcement = ConstraintEnforcementModule

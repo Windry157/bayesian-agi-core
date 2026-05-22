@@ -19,6 +19,7 @@ models/*.pth
 models/*.pt
 data/
 memory/
+!src/core/memory/
 
 # IDE/编辑器
 .vscode/

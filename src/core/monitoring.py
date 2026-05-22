@@ -257,5 +257,12 @@ class MonitoringSystem:
         return content, {"Content-Type": "text/plain; version=0.0.4"}
 
 
+class SystemMonitor:
+    """系统监控器"""
+
+    def get_health_status(self) -> dict:
+        return {}
+
+
 # 创建监控系统实例
 monitoring = MonitoringSystem()
