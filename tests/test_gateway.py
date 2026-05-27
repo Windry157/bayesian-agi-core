@@ -111,3 +111,23 @@ class TestWebSocketChannel:
     def test_websocket_channel_import(self):
         from src.gateway.websocket_channel import WebSocketChannel
         assert WebSocketChannel.name == "websocket"
+
+
+class TestWeChatChannel:
+    def test_wechat_channel_import(self):
+        from src.gateway.wechat_channel import WeChatChannel
+        assert WeChatChannel.name == "wechat"
+
+    def test_verify_signature(self):
+        from src.gateway.wechat_channel import WeChatChannel
+        from unittest.mock import MagicMock
+        ch = WeChatChannel(router=MagicMock(), token="")
+        assert ch._verify("sig", "ts", "nonce") is True  # empty token passes
+
+    def test_build_xml_reply(self):
+        from src.gateway.wechat_channel import WeChatChannel
+        from unittest.mock import MagicMock
+        ch = WeChatChannel(router=MagicMock(), token="")
+        xml = ch._build_xml_reply("user1", "bot1", "hello world")
+        assert "<ToUserName><![CDATA[user1]]></ToUserName>" in xml
+        assert "<Content><![CDATA[hello world]]></Content>" in xml

@@ -204,3 +204,7 @@ gateway:
     websocket:
       enabled: true
       port: 8510
+    wechat:
+      enabled: false
+      token: "${WECHAT_TOKEN}"
+      port: 8520

@@ -24,6 +24,7 @@ class GatewayServer:
     def _init_channels(self):
         from .telegram_channel import TelegramChannel
         from .websocket_channel import WebSocketChannel
+        from .wechat_channel import WeChatChannel
 
         tg_cfg = self.config.channels.get("telegram", {})
         if tg_cfg.get("enabled") and tg_cfg.get("token"):
@@ -35,6 +36,13 @@ class GatewayServer:
             ws_port = ws_cfg.get("port", 8510)
             self.channels.append(WebSocketChannel(router=self.router, port=ws_port))
             logger.info(f"WebSocket channel enabled on port {ws_port}")
+
+        wx_cfg = self.config.channels.get("wechat", {})
+        if wx_cfg.get("enabled"):
+            wx_port = wx_cfg.get("port", 8520)
+            wx_token = wx_cfg.get("token", "")
+            self.channels.append(WeChatChannel(router=self.router, token=wx_token, port=wx_port))
+            logger.info(f"WeChat channel enabled on port {wx_port}")
 
     async def start(self):
         self._init_channels()

@@ -1,5 +1,6 @@
 import logging
 from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import Application, MessageHandler, CommandHandler, filters, ContextTypes
 
 from .channel import ChannelBase, IncomingMessage, OutgoingMessage
@@ -24,6 +25,7 @@ class TelegramChannel(ChannelBase):
         self._app.add_handler(CommandHandler("memory", self._handle_update))
         self._app.add_handler(CommandHandler("analyze", self._handle_update))
         self._app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self._handle_update))
+        self._app.add_handler(MessageHandler(filters.PHOTO, self._handle_photo))
         logger.info("Telegram channel started")
         await self._app.initialize()
         await self._app.start()
@@ -47,6 +49,21 @@ class TelegramChannel(ChannelBase):
         if reply:
             await self.send_message(reply)
 
+    async def _handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not update.message or not update.message.photo:
+            return
+        user_id = str(update.message.from_user.id) if update.message.from_user else "unknown"
+        caption = update.message.caption or "(image)"
+        incoming = IncomingMessage(
+            channel="telegram",
+            channel_user_id=user_id,
+            text=caption,
+            metadata={"has_photo": True},
+        )
+        reply = await self.router.route(incoming)
+        if reply:
+            await self.send_message(reply)
+
     async def send_message(self, message: OutgoingMessage):
         if not self._app:
             return
@@ -54,4 +71,11 @@ class TelegramChannel(ChannelBase):
             chat_id = int(message.channel_user_id)
         except ValueError:
             return
-        await self._app.bot.send_message(chat_id=chat_id, text=message.text)
+        try:
+            await self._app.bot.send_message(
+                chat_id=chat_id,
+                text=message.text,
+                parse_mode=ParseMode.MARKDOWN,
+            )
+        except Exception:
+            await self._app.bot.send_message(chat_id=chat_id, text=message.text)
