@@ -105,3 +105,9 @@ class TestMessageRouter:
         result = await router.route(msg)
         assert result is not None
         assert "Commands" in result.text
+
+
+class TestWebSocketChannel:
+    def test_websocket_channel_import(self):
+        from src.gateway.websocket_channel import WebSocketChannel
+        assert WebSocketChannel.name == "websocket"

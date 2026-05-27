@@ -201,3 +201,6 @@ gateway:
     telegram:
       enabled: false
       token: "${TELEGRAM_BOT_TOKEN}"
+    websocket:
+      enabled: true
+      port: 8510
