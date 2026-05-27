@@ -113,6 +113,45 @@ class TestWebSocketChannel:
         assert WebSocketChannel.name == "websocket"
 
 
+class TestGatewaySession:
+    def test_session_id_generation(self):
+        from src.gateway.router import MessageRouter
+        from src.gateway.mcp_client import MCPClient
+        router = MessageRouter(MCPClient())
+        sid1 = router.get_session_id("tg", "user1")
+        sid2 = router.get_session_id("tg", "user2")
+        sid3 = router.get_session_id("wx", "user1")
+        assert sid1 != sid2
+        assert sid1 != sid3
+        assert sid1 == "tg:user1"
+
+    def test_router_cleans_empty_sessions(self):
+        from src.gateway.router import MessageRouter
+        from src.gateway.mcp_client import MCPClient
+        router = MessageRouter(MCPClient())
+        router._sessions["tg:old"] = "ses_expired"
+        assert "tg:old" in router._sessions
+
+
+class TestOllamaLLMRefactor:
+    def test_ollama_llm_extends_basellm(self):
+        from src.core.llm.ollama_service import OllamaLLM
+        from src.core.llm.base_llm import BaseLLM, LLMConfig
+        config = LLMConfig(provider="ollama", model="test-model", base_url="http://localhost:11434")
+        llm = OllamaLLM(config)
+        assert isinstance(llm, BaseLLM)
+        assert llm.provider == "ollama"
+        assert llm.model == "test-model"
+
+    def test_ollama_llm_get_model_info(self):
+        from src.core.llm.ollama_service import OllamaLLM
+        from src.core.llm.base_llm import LLMConfig
+        llm = OllamaLLM(LLMConfig(provider="ollama", model="test"))
+        info = llm.get_model_info()
+        assert info["provider"] == "ollama"
+        assert info["model"] == "test"
+
+
 class TestWeChatChannel:
     def test_wechat_channel_import(self):
         from src.gateway.wechat_channel import WeChatChannel

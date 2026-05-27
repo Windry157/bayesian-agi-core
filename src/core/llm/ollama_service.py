@@ -1,87 +1,112 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Ollama LLM服务
+Ollama LLM 服务 - 基于 BaseLLM 实现，兼容 LLMRouter
 """
 
 import httpx
-from typing import List, Dict, AsyncGenerator, Any
-from ..interfaces import ILLMService
+import json
+from typing import List, Dict, AsyncGenerator, Any, Optional
+from datetime import datetime
+
+from ..llm.base_llm import BaseLLM, LLMConfig, LLMResponse, Message
 
 
-class OllamaLLM(ILLMService):
-    """Ollama LLM服务"""
+class OllamaLLM(BaseLLM):
+    """Ollama LLM 服务"""
 
-    def __init__(self, config: Dict[str, Any]):
-        """初始化Ollama LLM服务
+    def __init__(self, config: LLMConfig):
+        super().__init__(config)
+        self.base_url = config.base_url or "http://localhost:11434"
 
-        Args:
-            config: 配置
-        """
-        self.ollama_url = config.get("ollama_url", "http://localhost:11434")
-        self.default_model = config.get("default", "deepseek-r1:7b")
+    async def generate(
+        self,
+        prompt: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        **kwargs
+    ) -> LLMResponse:
+        messages = [Message(role="user", content=prompt)]
+        return await self.chat(messages, temperature=temperature, max_tokens=max_tokens, **kwargs)
+
+    async def chat(
+        self,
+        messages: List[Message],
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        **kwargs
+    ) -> LLMResponse:
+        payload = {
+            "model": self.model,
+            "messages": [{"role": m.role, "content": m.content} for m in messages],
+            "stream": False,
+        }
+        if temperature is not None:
+            payload["options"] = {"temperature": temperature}
+
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(f"{self.base_url}/api/chat", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+            content = data.get("message", {}).get("content", "")
+
+        return LLMResponse(
+            content=content,
+            model=self.model,
+            provider=self.provider,
+            usage={"input_tokens": 0, "output_tokens": len(content)},
+        )
 
     async def stream_chat(
         self, messages: List[Dict], tools: List[Dict] = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
-        """流式聊天
-
-        Args:
-            messages: 消息列表
-            tools: 工具列表
-
-        Returns:
-            流式生成的响应
-        """
-        url = f"{self.ollama_url}/api/chat"
-        payload = {"model": self.default_model, "messages": messages, "stream": True}
-
+        payload = {"model": self.model, "messages": messages, "stream": True}
         async with httpx.AsyncClient() as client:
-            async with client.stream("POST", url, json=payload) as response:
-                async for chunk in response.aiter_text():
-                    if chunk:
-                        yield {"content": chunk}
+            async with client.stream("POST", f"{self.base_url}/api/chat", json=payload) as resp:
+                async for chunk in resp.aiter_lines():
+                    if chunk.strip():
+                        try:
+                            data = json.loads(chunk)
+                            if "message" in data:
+                                yield {"content": data["message"].get("content", "")}
+                        except json.JSONDecodeError:
+                            continue
 
     async def get_available_models(self) -> List[Dict[str, Any]]:
-        """获取可用模型
-
-        Returns:
-            模型列表
-        """
-        url = f"{self.ollama_url}/api/tags"
-
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-            if response.status_code == 200:
-                data = response.json()
-                return [
-                    {
-                        "name": model["name"],
-                        "size": model.get("size", 0),
-                        "modified_at": model.get("modified_at", ""),
-                    }
-                    for model in data.get("models", [])
-                ]
-            return []
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(f"{self.base_url}/api/tags", timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return [
+                        {"name": m["name"], "size": m.get("size", 0)}
+                        for m in data.get("models", [])
+                    ]
+        except Exception:
+            pass
+        return []
 
     def get_available_models_sync(self) -> List[Dict[str, Any]]:
-        """同步获取可用模型
+        try:
+            with httpx.Client() as client:
+                resp = client.get(f"{self.base_url}/api/tags", timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return [
+                        {"name": m["name"], "size": m.get("size", 0)}
+                        for m in data.get("models", [])
+                    ]
+        except Exception:
+            pass
+        return []
 
-        Returns:
-            模型列表
-        """
-        url = f"{self.ollama_url}/api/tags"
+    def get_model_info(self) -> Dict[str, Any]:
+        return {"provider": self.provider, "model": self.model, "base_url": self.base_url}
 
-        with httpx.Client() as client:
-            response = client.get(url)
-            if response.status_code == 200:
-                data = response.json()
-                return [
-                    {
-                        "name": model["name"],
-                        "size": model.get("size", 0),
-                        "modified_at": model.get("modified_at", ""),
-                    }
-                    for model in data.get("models", [])
-                ]
-            return []
+    def is_available(self) -> bool:
+        try:
+            with httpx.Client() as client:
+                resp = client.get(f"{self.base_url}/api/tags", timeout=5)
+                return resp.status_code == 200
+        except Exception:
+            return False
