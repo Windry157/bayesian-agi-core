@@ -57,5 +57,6 @@ class MessageRouter:
             })
             reply = result.get("text", "Analysis failed.")
         else:
-            reply = await self._handle_chat(text, msg, session_id).then(lambda o: o.text)
+            fallback = await self._handle_chat(text, msg, session_id)
+            reply = fallback.text
         return OutgoingMessage(text=reply, channel=msg.channel, channel_user_id=msg.channel_user_id)

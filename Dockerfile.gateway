@@ -1,0 +1,19 @@
+FROM python:3.14-slim
+
+LABEL service="message-gateway"
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt python-telegram-bot
+
+COPY src/ ./src/
+COPY start_gateway.py .
+
+ENV TELEGRAM_BOT_TOKEN=""
+ENV ENGINE_URL="http://api-gateway:8000"
+ENV MCP_URL="http://api-gateway:8090/mcp"
+
+EXPOSE 8500
+
+CMD ["python", "start_gateway.py"]
