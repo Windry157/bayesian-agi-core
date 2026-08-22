@@ -1,0 +1,57 @@
+# =============================================================================
+# Bayesian-AGI-Core Multi-Stage Dockerfile
+# 优化的多阶段构建，减少镜像大小
+# =============================================================================
+
+# 阶段1: 构建阶段
+FROM python:3.10-slim AS builder
+
+WORKDIR /app
+
+# 安装构建依赖
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制依赖文件并构建
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# 阶段2: 运行阶段
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# 只复制必要的运行时依赖（不包含 gcc/g++）
+COPY --from=builder /root/.local /root/.local
+COPY --from=builder /app/requirements.txt .
+
+# 安装运行时依赖（只包含纯 Python 包）
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# 复制应用代码
+COPY src/ src/
+COPY config.yaml .
+
+# 创建必要的目录
+RUN mkdir -p logs memory data && \
+    chown -R nobody:nogroup /app
+
+# 设置环境变量
+ENV PATH=/root/.local:$PATH
+ENV PYTHONPATH=/app
+ENV APP_ENV=production
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# 使用非 root 用户运行（增强安全性）
+USER nobody
+
+# 暴露端口
+EXPOSE 8000
+
+# 启动命令
+CMD ["python", "-c", "import uvicorn; uvicorn.run('src.main:app', host='0.0.0.0', port=8000)"]

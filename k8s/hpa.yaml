@@ -1,0 +1,65 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bayesian-agi-core-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bayesian-agi-core
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    # CPU 使用率指标
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    
+    # 内存使用率指标
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    
+    # 自定义延迟指标（需要 Prometheus Adapter）
+    - type: Pods
+      pods:
+        metric:
+          name: decision_making_latency_seconds
+        target:
+          type: AverageValue
+          averageValue: 500m  # 500ms
+    
+    # 自定义请求率指标
+    - type: Pods
+      pods:
+        metric:
+          name: decision_making_requests_total
+        target:
+          type: AverageValue
+          averageValue: 100m  # 每秒100个请求
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+        - type: Percent
+          value: 50
+          periodSeconds: 60

@@ -1,0 +1,345 @@
+# =====================================================================
+# Bayesian-AGI-Core Prometheus 告警规则
+# =====================================================================
+
+groups:
+  # 服务健康告警
+  - name: bayesian-agi-service-health
+    interval: 30s
+    rules:
+      # 服务宕机告警
+      - alert: ServiceDown
+        expr: up{job="bayesian-agi"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: bayesian-agi
+          team: platform
+        annotations:
+          summary: "Bayesian-AGI 服务已宕机"
+          description: "服务 {{ $labels.instance }} 已停止运行超过1分钟"
+          runbook_url: "https://wiki.example.com/runbooks/bayesian-agi-down"
+
+      # MCP Server宕机告警
+      - alert: MCPServerDown
+        expr: up{job="mcp-server"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: mcp-server
+          team: platform
+        annotations:
+          summary: "MCP Server 无响应"
+          description: "MCP Server {{ $labels.instance }} 停止响应超过30秒"
+          runbook_url: "https://wiki.example.com/runbooks/mcp-server-down"
+
+      # 服务重启告警
+      - alert: ServiceRestarted
+        expr: increase(process_start_time_seconds{job="bayesian-agi"}[5m]) > 0
+        for: 0s
+        labels:
+          severity: warning
+          service: bayesian-agi
+        annotations:
+          summary: "服务已重启"
+          description: "服务 {{ $labels.instance }} 在5分钟内重启了"
+
+  # 性能告警
+  - name: bayesian-agi-performance
+    interval: 30s
+    rules:
+      # 高错误率告警
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status=~"5.."}[5m]) /
+            rate(http_requests_total[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: bayesian-agi
+        annotations:
+          summary: "HTTP 错误率过高"
+          description: "服务 {{ $labels.instance }} 的5xx错误率超过5% (当前: {{ $value | humanizePercentage }})"
+
+      # 严重错误率告警
+      - alert: CriticalErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status=~"5.."}[5m]) /
+            rate(http_requests_total[5m])
+          ) > 0.20
+        for: 1m
+        labels:
+          severity: critical
+          service: bayesian-agi
+        annotations:
+          summary: "HTTP 错误率严重"
+          description: "服务 {{ $labels.instance }} 的5xx错误率超过20% (当前: {{ $value | humanizePercentage }})"
+
+      # 高延迟告警
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: bayesian-agi
+        annotations:
+          summary: "请求延迟过高"
+          description: "服务 {{ $labels.instance }} 的P95延迟超过2秒 (当前: {{ $value }}s)"
+
+      # 严重延迟告警
+      - alert: CriticalLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 5
+        for: 3m
+        labels:
+          severity: critical
+          service: bayesian-agi
+        annotations:
+          summary: "请求延迟严重"
+          description: "服务 {{ $labels.instance }} 的P95延迟超过5秒 (当前: {{ $value }}s)"
+
+  # 资源使用告警
+  - name: bayesian-agi-resources
+    interval: 60s
+    rules:
+      # CPU使用率高
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="bayesian-agi"}[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          service: bayesian-agi
+        annotations:
+          summary: "CPU 使用率过高"
+          description: "服务 {{ $labels.instance }} 的CPU使用率超过80% (当前: {{ $value }}%)"
+
+      # 内存使用率高
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="bayesian-agi"} /
+          system_memory_bytes * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          service: bayesian-agi
+        annotations:
+          summary: "内存使用率过高"
+          description: "服务 {{ $labels.instance }} 的内存使用率超过85%"
+
+      # 内存泄漏告警
+      - alert: MemoryLeak
+        expr: |
+          predict_linear(
+            process_resident_memory_bytes{job="bayesian-agi"}[30m],
+            3600
+          ) > 2 * process_resident_memory_bytes{job="bayesian-agi"}
+        for: 15m
+        labels:
+          severity: warning
+          service: bayesian-agi
+        annotations:
+          summary: "检测到可能的内存泄漏"
+          description: "服务 {{ $labels.instance }} 的内存使用呈现增长趋势，1小时后将超过当前的两倍"
+
+  # 业务指标告警
+  - name: bayesian-agi-business
+    interval: 60s
+    rules:
+      # 请求速率异常
+      - alert: RequestRateAnomaly
+        expr: |
+          abs(
+            rate(http_requests_total[10m]) -
+            rate(http_requests_total[10m] offset 1h)
+          ) > 0.5 * rate(http_requests_total[10m] offset 1h)
+        for: 15m
+        labels:
+          severity: warning
+          service: bayesian-agi
+        annotations:
+          summary: "请求速率异常"
+          description: "服务 {{ $labels.instance }} 的请求速率与1小时前相比变化超过50%"
+
+      # 健康检查失败
+      - alert: HealthCheckFailing
+        expr: bayesian_health_check_status == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: bayesian-agi
+        annotations:
+          summary: "健康检查失败"
+          description: "服务 {{ $labels.instance }} 的健康检查持续失败超过2分钟"
+
+      # MCP工具调用失败率
+      - alert: MCPToolFailureRate
+        expr: |
+          (
+            rate(mcp_tool_errors_total[5m]) /
+            rate(mcp_tools_called_total[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: mcp-server
+        annotations:
+          summary: "MCP 工具调用失败率过高"
+          description: "MCP Server {{ $labels.instance }} 的工具调用失败率超过10%"
+
+  # 基础设施告警
+  - name: bayesian-agi-infrastructure
+    interval: 60s
+    rules:
+      # 磁盘空间不足
+      - alert: DiskSpaceLow
+        expr: |
+          (
+            filesystem_free_bytes{mountpoint="/"} /
+            filesystem_size_bytes{mountpoint="/"}
+          ) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: bayesian-agi
+        annotations:
+          summary: "磁盘空间不足"
+          description: "服务器 {{ $labels.instance }} 的根分区可用空间低于10%"
+
+      # OOM Killer
+      - alert: OOMKillerActive
+        expr: |
+          increase(kernel_oom_kills_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          service: bayesian-agi
+        annotations:
+          summary: "OOM Killer 被激活"
+          description: "服务器 {{ $labels.instance }} 的OOM Killer被激活，可能导致服务中断"
+
+      # 网络连接数过多
+      - alert: TooManyConnections
+        expr: |
+          count(
+            net_conntrack_entries{state="established"}
+          ) > 10000
+        for: 5m
+        labels:
+          severity: warning
+          service: bayesian-agi
+        annotations:
+          summary: "网络连接数过多"
+          description: "服务器 {{ $labels.instance }} 的活动网络连接数超过10000"
+
+  # LLM 服务告警
+  - name: bayesian-agi-llm
+    interval: 30s
+    rules:
+      # LLM 服务不可用
+      - alert: LLMServiceUnavailable
+        expr: |
+          rate(ollama_requests_total{status="error"}[5m]) /
+          rate(ollama_requests_total[5m]) > 0.5
+        for: 3m
+        labels:
+          severity: critical
+          service: llm-service
+        annotations:
+          summary: "LLM 服务不可用"
+          description: "Ollama 服务错误率超过50%，可能无法正常响应"
+
+      # LLM 响应超时
+      - alert: LLMResponseTimeout
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(ollama_request_duration_seconds_bucket[5m])) by (le)
+          ) > 60
+        for: 5m
+        labels:
+          severity: warning
+          service: llm-service
+        annotations:
+          summary: "LLM 响应超时"
+          description: "Ollama 服务的P95响应时间超过60秒"
+
+      # LLM 模型未加载
+      - alert: LLMModelNotLoaded
+        expr: |
+          count(ollama_models_loaded) == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: llm-service
+        annotations:
+          summary: "没有已加载的 LLM 模型"
+          description: "Ollama 服务当前没有加载任何模型"
+
+  # 记忆系统告警
+  - name: bayesian-agi-memory
+    interval: 60s
+    rules:
+      # 记忆存储使用率高
+      - alert: MemoryStorageHigh
+        expr: |
+          vector_db_storage_used_bytes /
+          vector_db_storage_total_bytes > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          service: memory-system
+        annotations:
+          summary: "记忆存储使用率过高"
+          description: "向量数据库存储使用率超过90%，需要扩容或清理"
+
+      # 记忆检索延迟高
+      - alert: MemoryRetrievalLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(memory_retrieval_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: memory-system
+        annotations:
+          summary: "记忆检索延迟过高"
+          description: "记忆系统的P95检索延迟超过500ms"
+
+      # 记忆同步失败
+      - alert: MemorySyncFailure
+        expr: |
+          rate(memory_sync_errors_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          service: memory-system
+        annotations:
+          summary: "记忆同步失败"
+          description: "记忆系统同步失败率增加，请检查存储连接"
+
+# 告警抑制规则（避免告警风暴）
+inhibition_rules:
+  # 如果服务宕机，不发送相关性能告警
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    target_re:
+      service: bayesian-agi
+    description: "服务宕机时抑制性能告警"
+
+  # 如果LLM服务不可用，抑制相关延迟告警
+  - source_match:
+      alert: LLMServiceUnavailable
+    target_match:
+      alert: LLMResponseTimeout
+    description: "LLM不可用时抑制超时告警"

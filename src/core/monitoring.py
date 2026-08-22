@@ -7,11 +7,6 @@
 
 import time
 from prometheus_client import Counter, Gauge, Histogram, Summary
-from aioprometheus import Counter as AsyncCounter
-from aioprometheus import Gauge as AsyncGauge
-from aioprometheus import Histogram as AsyncHistogram
-from aioprometheus import Summary as AsyncSummary
-from aioprometheus import Registry, render
 
 
 class MonitoringSystem:
@@ -63,38 +58,6 @@ class MonitoringSystem:
             "decision_making_seconds", "Decision Making Time"
         )
 
-        # 异步指标
-        self.registry = Registry()
-        self.async_request_counter = AsyncCounter(
-            "async_http_requests_total", "Total HTTP Requests"
-        )
-        self.async_request_duration = AsyncHistogram(
-            "async_http_request_duration_seconds", "HTTP Request Duration"
-        )
-        # 新增：异步安全监控指标
-        self.async_security_events = AsyncCounter(
-            "async_security_events_total", "Security Events"
-        )
-        self.async_constraint_violations = AsyncCounter(
-            "async_constraint_violations_total", "Constraint Violations"
-        )
-        # 新增：异步服务健康监控指标
-        self.async_service_health = AsyncGauge(
-            "async_service_health_status", "Service Health Status"
-        )
-        # 新增：异步业务指标
-        self.async_learning_cycles = AsyncCounter(
-            "async_learning_cycles_total", "Learning Cycles"
-        )
-
-        # 注册异步指标
-        self.registry.register(self.async_request_counter)
-        self.registry.register(self.async_request_duration)
-        self.registry.register(self.async_security_events)
-        self.registry.register(self.async_constraint_violations)
-        self.registry.register(self.async_service_health)
-        self.registry.register(self.async_learning_cycles)
-
     def record_request(self, method: str, endpoint: str, status: int, duration: float):
         """记录HTTP请求
 
@@ -107,21 +70,6 @@ class MonitoringSystem:
         self.request_counter.labels(
             method=method, endpoint=endpoint, status=status
         ).inc()
-        self.request_duration.labels(method=method, endpoint=endpoint).observe(duration)
-
-    async def async_record_request(
-        self, method: str, endpoint: str, status: int, duration: float
-    ):
-        """异步记录HTTP请求
-
-        Args:
-            method: HTTP方法
-            endpoint: 端点
-            status: 状态码
-            duration: 持续时间
-        """
-        await self.async_request_counter.inc()
-        await self.async_request_duration.observe(duration)
 
     def record_memory_usage(self, usage: float):
         """记录内存使用情况
@@ -213,50 +161,6 @@ class MonitoringSystem:
             duration: 决策制定时间（秒）
         """
         self.decision_making_time.observe(duration)
-
-    async def async_record_security_event(self, event_type: str, severity: str):
-        """异步记录安全事件
-
-        Args:
-            event_type: 事件类型
-            severity: 严重程度
-        """
-        await self.async_security_events.inc()
-
-    async def async_record_constraint_violation(self, violation_type: str):
-        """异步记录约束违反
-
-        Args:
-            violation_type: 违反类型
-        """
-        await self.async_constraint_violations.inc()
-
-    async def async_record_service_health(self, service: str, status: float):
-        """异步记录服务健康状态
-
-        Args:
-            service: 服务名称
-            status: 健康状态（1=健康，0=不健康）
-        """
-        await self.async_service_health.set(status)
-
-    async def async_record_learning_cycle(self, cycle_type: str):
-        """异步记录学习周期
-
-        Args:
-            cycle_type: 学习周期类型
-        """
-        await self.async_learning_cycles.inc()
-
-    async def get_metrics(self):
-        """获取指标
-
-        Returns:
-            指标数据
-        """
-        # 使用text格式渲染指标
-        content = await render(self.registry, format="text")
-        return content, {"Content-Type": "text/plain; version=0.0.4"}
 
 
 # 创建监控系统实例

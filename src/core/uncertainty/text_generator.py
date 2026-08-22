@@ -25,7 +25,7 @@ class TextGenerator:
     集成LLM生成文本响应，支持多种生成策略
     """
     
-    def __init__(self, ollama_url: str = "http://localhost:11434", default_model: str = "deepseek-r1:7b"):
+    def __init__(self, ollama_url: str = "http://192.168.3.105:11434", default_model: str = "llama3.1:8b"):
         """初始化文本生成器
         
         Args:
@@ -161,7 +161,157 @@ class TextGenerator:
             logger.info(f"低置信度处理: {confidence_score:.3f} < {confidence_threshold}, 类型: {uncertainty_type}")
         
         return result
-    
+
+    async def generate_with_tools(
+        self,
+        prompt: str,
+        context: Optional[List[Dict[str, Any]]] = None,
+        model: Optional[str] = None,
+        max_rounds: int = 10,
+    ) -> Dict[str, Any]:
+        messages = self._build_messages(prompt, context)
+        model_name = model or self.default_model
+        tools = self._tools_to_ollama_format()
+        tool_rounds = []
+        final_text = ""
+
+        for _ in range(max_rounds):
+            raw = await self._call_ollama_api(
+                messages=messages,
+                model=model_name,
+                max_tokens=1024,
+                tools=tools,
+            )
+            msg = raw.get("message", {})
+
+            if msg.get("tool_calls") and len(msg["tool_calls"]) > 0:
+                for tc in msg["tool_calls"]:
+                    fn = tc.get("function", {})
+                    tool_name = fn.get("name", "")
+                    args = fn.get("arguments", {})
+
+                    if isinstance(args, str):
+                        try:
+                            args = json.loads(args)
+                        except json.JSONDecodeError:
+                            args = {}
+
+                    try:
+                        from src.core.tools import tool_registry
+                        result = await tool_registry.execute(tool_name, args)
+                        tool_rounds.append({
+                            "tool": tool_name,
+                            "args": args,
+                            "output": result.output[:2000],
+                            "error": result.error,
+                        })
+                        messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
+                        messages.append({
+                            "role": "tool",
+                            "content": result.output[:2000],
+                        })
+                        logger.info(f"Tool '{tool_name}' executed: {result.output[:100]}...")
+                    except Exception as e:
+                        logger.error(f"Tool call failed: {tool_name} - {e}")
+                        tool_rounds.append({"tool": tool_name, "args": args, "error": str(e)})
+                        messages.append({"role": "tool", "content": f"Error: {e}"})
+                continue
+
+            final_text = msg.get("content", "").strip()
+            if final_text:
+                break
+
+        if not final_text:
+            final_text = "无法生成回答。"
+
+        return {
+            "text": final_text,
+            "model": model_name,
+            "tool_rounds": tool_rounds,
+            "tool_count": len(tool_rounds),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    async def generate_with_tools_stream(
+        self,
+        prompt: str,
+        context: Optional[List[Dict[str, Any]]] = None,
+        model: Optional[str] = None,
+        max_rounds: int = 10,
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        messages = self._build_messages(prompt, context)
+        model_name = model or self.default_model
+        tools = self._tools_to_ollama_format()
+        tool_rounds = []
+
+        for round_idx in range(max_rounds):
+            raw = await self._call_ollama_api(
+                messages=messages,
+                model=model_name,
+                max_tokens=1024,
+                tools=tools,
+            )
+            msg = raw.get("message", {})
+
+            if msg.get("tool_calls") and len(msg["tool_calls"]) > 0:
+                for tc in msg["tool_calls"]:
+                    fn = tc.get("function", {})
+                    tool_name = fn.get("name", "")
+                    args = fn.get("arguments", {})
+
+                    if isinstance(args, str):
+                        try:
+                            args = json.loads(args)
+                        except json.JSONDecodeError:
+                            args = {}
+
+                    yield {
+                        "type": "tool_call",
+                        "tool": tool_name,
+                        "args": args,
+                    }
+
+                    try:
+                        from src.core.tools import tool_registry
+                        result = await tool_registry.execute(tool_name, args)
+                        output = result.output[:2000]
+                        tool_rounds.append({
+                            "tool": tool_name, "args": args,
+                            "output": output, "error": result.error,
+                        })
+                        yield {
+                            "type": "tool_result",
+                            "tool": tool_name,
+                            "output": output,
+                            "error": result.error,
+                        }
+                        messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
+                        messages.append({"role": "tool", "content": output})
+                    except Exception as e:
+                        yield {"type": "tool_result", "tool": tool_name, "error": str(e)}
+                        tool_rounds.append({"tool": tool_name, "args": args, "error": str(e)})
+                        messages.append({"role": "tool", "content": f"Error: {e}"})
+                continue
+
+            final_text = msg.get("content", "").strip()
+            if final_text:
+                yield {
+                    "type": "text",
+                    "content": final_text,
+                    "tool_rounds": tool_rounds,
+                    "tool_count": len(tool_rounds),
+                    "model": model_name,
+                }
+                return
+
+        yield {
+            "type": "text",
+            "content": "无法生成回答。",
+            "tool_rounds": tool_rounds,
+            "tool_count": len(tool_rounds),
+            "model": model_name,
+        }
+
     def _build_messages(self, prompt: str, context: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
         """构建消息列表
         
@@ -185,26 +335,34 @@ class TextGenerator:
         
         return messages
     
+    def _tools_to_ollama_format(self) -> List[Dict]:
+        try:
+            from src.core.tools import tool_registry
+            tools = tool_registry.list_tools()
+            return [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": t["name"],
+                        "description": t["description"],
+                        "parameters": t.get("parameters", {}),
+                    }
+                }
+                for t in tools
+            ]
+        except Exception:
+            return []
+
     async def _call_ollama_api(
         self,
         messages: List[Dict[str, Any]],
         model: str,
         max_tokens: int = 500,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        tools: List[Dict] = None,
     ) -> Dict[str, Any]:
-        """调用Ollama API
-        
-        Args:
-            messages: 消息列表
-            model: 模型名称
-            max_tokens: 最大token数
-            temperature: 温度参数
-            
-        Returns:
-            API响应
-        """
         url = f"{self.ollama_url}/api/chat"
-        
+
         payload = {
             "model": model,
             "messages": messages,
@@ -216,6 +374,8 @@ class TextGenerator:
                 "repeat_penalty": 1.1
             }
         }
+        if tools:
+            payload["tools"] = tools
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -358,5 +518,21 @@ class TextGenerator:
             return []
 
 
-# 全局文本生成器实例
-text_generator = TextGenerator()
+# 全局文本生成器实例（延迟初始化）
+text_generator = None
+
+
+def initialize_text_generator(ollama_url: str = "http://192.168.3.105:11434", default_model: str = "gemma4:e4b"):
+    """初始化文本生成器
+    
+    Args:
+        ollama_url: Ollama服务URL
+        default_model: 默认模型名称
+    """
+    global text_generator
+    if text_generator is None:
+        text_generator = TextGenerator(ollama_url=ollama_url, default_model=default_model)
+    else:
+        text_generator.ollama_url = ollama_url
+        text_generator.default_model = default_model
+        logger.info(f"更新文本生成器配置: {ollama_url}, 模型: {default_model}")

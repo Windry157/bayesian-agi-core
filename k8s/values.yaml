@@ -1,0 +1,105 @@
+# Bayesian-AGI-Core Helm Chart Values
+
+# 全局配置
+global:
+  namespace: bayesian-agi
+  imageRegistry: docker.io
+  imagePullPolicy: Always
+
+# 部署配置
+deployment:
+  name: bayesian-agi-core
+  replicas: 3
+  
+  # 容器配置
+  container:
+    image: your-docker-username/bayesian-agi-core:latest
+    port: 8000
+    
+    # 资源限制
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+    
+    # 环境变量
+    env:
+      APP_ENV: production
+      LOG_LEVEL: INFO
+    
+    # 健康检查
+    livenessProbe:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+    readinessProbe:
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+
+# 服务配置
+service:
+  name: bayesian-agi-core-service
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+# 自动扩缩容配置
+hpa:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  
+  metrics:
+    cpu:
+      enabled: true
+      targetAverageUtilization: 70
+    memory:
+      enabled: true
+      targetAverageUtilization: 80
+    latency:
+      enabled: true
+      targetAverageValue: 500m
+    requests:
+      enabled: true
+      targetAverageValue: 100m
+
+# Ingress 配置
+ingress:
+  enabled: true
+  host: api.bayesian-agi-core.com
+  tls:
+    enabled: true
+    secretName: bayesian-agi-core-tls
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+
+# 配置映射
+configmap:
+  ollamaUrl: http://ollama-service:11434
+  defaultModel: gemma4:e4b
+  serverHost: 0.0.0.0
+  serverPort: "8000"
+  securityLevel: strict
+  memoryBackend: chromadb
+
+# 安全配置
+security:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+# 监控配置
+monitoring:
+  enabled: true
+  prometheusScrape: true
+  prometheusPort: 8000
+  prometheusPath: /health/metrics

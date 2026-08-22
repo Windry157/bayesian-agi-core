@@ -1,0 +1,157 @@
+﻿{
+  "started_at": "2026-05-19T16:28:29.145502",
+  "phases": {
+    "concurrency": {
+      "1": {
+        "concurrency": 1,
+        "total_requests": 1,
+        "batch_time_sec": 0.006,
+        "throughput_rps": 154.2,
+        "avg_latency_ms": 6.3,
+        "p50_ms": 6.3,
+        "p99_ms": 6.3,
+        "errors": 0,
+        "success_rate": 100.0
+      },
+      "5": {
+        "concurrency": 5,
+        "total_requests": 5,
+        "batch_time_sec": 0.029,
+        "throughput_rps": 172.1,
+        "avg_latency_ms": 22.4,
+        "p50_ms": 26.9,
+        "p99_ms": 27.6,
+        "errors": 0,
+        "success_rate": 100.0
+      },
+      "10": {
+        "concurrency": 10,
+        "total_requests": 10,
+        "batch_time_sec": 0.019,
+        "throughput_rps": 516.8,
+        "avg_latency_ms": 12.1,
+        "p50_ms": 15.0,
+        "p99_ms": 17.4,
+        "errors": 0,
+        "success_rate": 100.0
+      },
+      "25": {
+        "concurrency": 25,
+        "total_requests": 25,
+        "batch_time_sec": 0.05,
+        "throughput_rps": 497.4,
+        "avg_latency_ms": 26.5,
+        "p50_ms": 27.5,
+        "p99_ms": 39.6,
+        "errors": 0,
+        "success_rate": 100.0
+      },
+      "50": {
+        "concurrency": 50,
+        "total_requests": 50,
+        "batch_time_sec": 0.175,
+        "throughput_rps": 285.7,
+        "avg_latency_ms": 89.3,
+        "p50_ms": 87.1,
+        "p99_ms": 170.0,
+        "errors": 0,
+        "success_rate": 100.0
+      }
+    },
+    "memory_stability": {
+      "iterations": 50,
+      "items_per_batch": 20,
+      "initial_items": 42,
+      "final_items_after_prune": 500,
+      "avg_latency_ms": 2.1,
+      "p99_latency_ms": 3.0
+    },
+    "fault_tolerance": {
+      "scenarios_tested": 8,
+      "all_recovered": true,
+      "details": [
+        {
+          "scenario": "empty input code",
+          "method": "tools/call",
+          "error_handled": false,
+          "recovered": true
+        },
+        {
+          "scenario": "missing required field",
+          "method": "tools/call",
+          "error_handled": false,
+          "recovered": true
+        },
+        {
+          "scenario": "unknown tool name",
+          "method": "tools/call",
+          "error_handled": true,
+          "recovered": true
+        },
+        {
+          "scenario": "malformed JSON body",
+          "method": "POST /mcp",
+          "error_handled": true,
+          "recovered": true
+        },
+        {
+          "scenario": "max-length input overflow",
+          "method": "tools/call",
+          "error_handled": false,
+          "recovered": true
+        },
+        {
+          "scenario": "deep nesting reasoning chain",
+          "method": "tools/call",
+          "error_handled": false,
+          "recovered": true
+        },
+        {
+          "scenario": "empty query search",
+          "method": "tools/call",
+          "error_handled": false,
+          "recovered": true
+        },
+        {
+          "scenario": "tools list after init",
+          "method": "tools/call",
+          "error_handled": false,
+          "recovered": true
+        }
+      ]
+    },
+    "kpi_benchmark": {
+      "active_inference (4 fields)": {
+        "avg_ms": 3.3,
+        "p50_ms": 3.2,
+        "p95_ms": 3.5,
+        "p99_ms": 3.5,
+        "throughput_rps": 306.7,
+        "samples": 10
+      },
+      "code_eval (python 50 lines)": {
+        "avg_ms": 4.0,
+        "p50_ms": 4.0,
+        "p95_ms": 4.1,
+        "p99_ms": 4.1,
+        "throughput_rps": 251.5,
+        "samples": 10
+      },
+      "bug_retrieval": {
+        "avg_ms": 2.3,
+        "p50_ms": 2.2,
+        "p95_ms": 2.5,
+        "p99_ms": 2.5,
+        "throughput_rps": 441.5,
+        "samples": 10
+      },
+      "semantic_search (all layers)": {
+        "avg_ms": 51.7,
+        "p50_ms": 5.4,
+        "p95_ms": 467.7,
+        "p99_ms": 467.7,
+        "throughput_rps": 19.3,
+        "samples": 10
+      },
+      "reasoning_chain (10 steps)": {
+        "

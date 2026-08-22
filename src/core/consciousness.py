@@ -20,8 +20,7 @@ from src.core.memory.context_bridge import ContextBridge
 from src.core.memory.memory_system import MemorySystem
 from src.core.cognition.cognition_coordinator import CognitionCoordinator
 from src.core.learning.learning_manager import LearningManager
-from src.core.monitoring import SystemMonitor
-from src.core.safety.constraint_enforcement import ConstraintEnforcement
+from src.core.safety.constraint_enforcement import ConstraintEnforcementModule
 from src.core.uncertainty import confidence_scorer, text_generator, response_wrapper
 
 # 配置日志
@@ -46,8 +45,7 @@ class Consciousness:
         self.memory_system = MemorySystem()
         self.cognition_coordinator = CognitionCoordinator()
         self.learning_manager = LearningManager()
-        self.system_monitor = SystemMonitor()
-        self.constraint_enforcement = ConstraintEnforcement()
+        self.constraint_enforcement = ConstraintEnforcementModule()
         
         # 连续思维状态
         self.continuous_thoughts: List[Dict[str, Any]] = []

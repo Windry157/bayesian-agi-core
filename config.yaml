@@ -5,7 +5,7 @@ app:
 
 models:
   default: "gemma4:e4b"
-  ollama_url: http://192.168.3.105:11434
+  ollama_url: "${OLLAMA_URL:-http://localhost:11434}"
   refresh_interval: 300
   routing_strategy: "round_robin"  # round_robin, random, least_response_time, cost_optimal, quality_first
 
@@ -13,7 +13,7 @@ models:
     ollama:
       enabled: true
       api_key: ""
-      base_url: http://192.168.3.105:11434
+      base_url: "${OLLAMA_URL:-http://localhost:11434}"
       timeout: 60
       retry_attempts: 3
       models:
@@ -89,6 +89,23 @@ models:
           input_cost_per_1k: 0.00125
           output_cost_per_1k: 0.005
 
+    volcengine:
+      enabled: false
+      api_key: "${VOLCENGINE_API_KEY}"
+      base_url: "${VOLCENGINE_BASE_URL:-https://ark.cn-beijing.volces.com/api/v3}"
+      timeout: 60
+      retry_attempts: 3
+      models:
+        - doubao-code
+        - doubao-seed-code
+      costs:
+        doubao-code:
+          input_cost_per_1k: 0.0
+          output_cost_per_1k: 0.0
+        doubao-seed-code:
+          input_cost_per_1k: 0.0
+          output_cost_per_1k: 0.0
+
 server:
   host: 0.0.0.0
   port: 8000
@@ -100,10 +117,10 @@ memory:
 
 feishu:
   enabled: true
-  app_id: "cli_aa84898ed9389beb"
-  app_secret: "LARK_APP_SECRET_PLACEHOLDER"
-  encrypt_key: "FEISHU_ENCRYPT_KEY_PLACEHOLDER"
-  verification_token: "FEISHU_VERIFICATION_TOKEN_PLACEHOLDER"
+  app_id: "${FEISHU_APP_ID}"
+  app_secret: "${FEISHU_APP_SECRET}"
+  encrypt_key: "${FEISHU_ENCRYPT_KEY}"
+  verification_token: "${FEISHU_VERIFICATION_TOKEN}"
 
 wechat:
   enabled: true

@@ -1,12 +1,15 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-知识模块包
-"""
-
-from .knowledge_graph import KnowledgeGraph, knowledge_graph
+from .document_processor import DocumentProcessor
+from .rag_retriever import RAGRetriever
+from .hybrid_search import HybridSearchEngine
+from .query_rewriter import QueryRewriter, StructuredOutputFormatter, SelfReflectionChecker
+from .enhanced_rag import EnhancedRAGRetriever
 
 __all__ = [
-    "KnowledgeGraph",
-    "knowledge_graph"
+    "DocumentProcessor",
+    "RAGRetriever",
+    "HybridSearchEngine",
+    "QueryRewriter",
+    "StructuredOutputFormatter",
+    "SelfReflectionChecker",
+    "EnhancedRAGRetriever"
 ]

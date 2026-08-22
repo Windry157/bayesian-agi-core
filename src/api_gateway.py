@@ -22,6 +22,7 @@ from src.core.monitoring import monitoring
 from src.services import monitoring_service
 from src.core.consciousness import consciousness
 from src.core.uncertainty import feedback_collector
+from src.utils.assistant_singleton import get_assistant
 
 # 配置日志
 logging.basicConfig(
@@ -73,9 +74,12 @@ async def startup_event():
     # 初始化消息队列
     try:
         message_queue_manager.connect()
-        logger.info("消息队列初始化成功")
+        if message_queue_manager.is_connected():
+            logger.info("消息队列初始化成功 (RabbitMQ)")
+        else:
+            logger.warning("消息队列初始化失败: RabbitMQ不可用，消息队列功能将被禁用")
     except Exception as e:
-        logger.warning(f"消息队列初始化失败: {e}")
+        logger.warning(f"消息队列初始化失败: {e}。消息队列功能将被禁用。")
     
     # 注册服务实例
     services = {
@@ -303,8 +307,7 @@ async def process_with_context(request: Request):
     
     try:
         # 从assistant实例获取处理结果
-        from src.core.assistant import Assistant
-        assistant = Assistant()
+        assistant = get_assistant()
         result = await assistant.process_with_context(input_text, session_id)
         return result
     except Exception as e:
@@ -315,8 +318,7 @@ async def process_with_context(request: Request):
 async def self_improvement():
     """触发自我完善循环"""
     try:
-        from src.core.assistant import Assistant
-        assistant = Assistant()
+        assistant = get_assistant()
         result = await assistant.self_improvement_cycle()
         return result
     except Exception as e:
@@ -327,8 +329,7 @@ async def self_improvement():
 async def generate_learning_goals():
     """生成学习目标"""
     try:
-        from src.core.assistant import Assistant
-        assistant = Assistant()
+        assistant = get_assistant()
         goals = await assistant.generate_learning_goals()
         return {"goals": goals}
     except Exception as e:
@@ -339,8 +340,7 @@ async def generate_learning_goals():
 async def start_autonomous_learning():
     """启动自主学习"""
     try:
-        from src.core.assistant import Assistant
-        assistant = Assistant()
+        assistant = get_assistant()
         success = await assistant.start_autonomous_learning()
         return {"success": success, "message": "Autonomous learning started"}
     except Exception as e:
@@ -351,8 +351,7 @@ async def start_autonomous_learning():
 async def get_system_health():
     """获取系统健康状态"""
     try:
-        from src.core.assistant import Assistant
-        assistant = Assistant()
+        assistant = get_assistant()
         health = assistant.get_system_health()
         return health
     except Exception as e:

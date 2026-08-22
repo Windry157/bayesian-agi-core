@@ -32,6 +32,17 @@ memory/
 logs/
 tmp/
 *.tmp
+bot_output.txt
+audit_logs/
+backups/
+
+# IDE 与编辑器
+.trae/
+
+# 生成报告
+*.html
+optimization_results.json
+phase2_results.json
 
 # Docker/构建
 docker-compose.override.yml

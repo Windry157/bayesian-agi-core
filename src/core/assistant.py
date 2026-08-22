@@ -6,7 +6,7 @@
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, AsyncGenerator
 from .interfaces import IModelManager, IAssistant
 from .cognition.bayesian_brain import BayesianBrain
 from .cognition.cognition_coordinator import CognitionCoordinator
@@ -25,69 +25,74 @@ class ModelManager(IModelManager):
     """模型管理器"""
 
     def __init__(self):
-        """初始化模型管理器"""
         self.models: List[Dict[str, Any]] = []
+        self._ollama_url = "http://localhost:11434"
 
     def load_from_config(self, config: Dict[str, Any]):
-        """从配置加载模型
-
-        Args:
-            config: 配置
-        """
-        logging.info(f"开始从配置加载模型列表: {config}")
         models_config = config.get("models", {})
+        self._ollama_url = models_config.get("ollama_url", "http://localhost:11434")
         providers = models_config.get("providers", {})
 
-        # 加载Ollama模型
         ollama_provider = providers.get("ollama", {})
         if ollama_provider.get("enabled", True):
-            ollama_models = ollama_provider.get("models", [])
-            for model in ollama_models:
-                self.models.append(
-                    {"name": model, "provider": "ollama", "type": "local"}
-                )
+            for model in ollama_provider.get("models", []):
+                self.models.append({"name": model, "provider": "ollama", "type": "local"})
 
-        # 加载OpenAI模型
         openai_provider = providers.get("openai", {})
         if openai_provider.get("enabled", False):
-            openai_models = openai_provider.get("models", [])
-            for model in openai_models:
-                self.models.append(
-                    {"name": model, "provider": "openai", "type": "cloud"}
-                )
+            for model in openai_provider.get("models", []):
+                self.models.append({"name": model, "provider": "openai", "type": "cloud"})
 
-        # 尝试从Ollama API获取模型
+        self._fetch_ollama_live()
+
+    def _fetch_ollama_live(self):
         try:
-            # 同步获取Ollama模型列表
             ollama_config = {
-                "ollama_url": models_config.get("ollama_url", "http://localhost:11434"),
-                "default": models_config.get("default", "deepseek-r1:7b"),
+                "ollama_url": self._ollama_url,
+                "default": "gemma4:e4b",
             }
             ollama_llm = OllamaLLM(ollama_config)
-            # 使用同步方法获取模型列表
             ollama_api_models = ollama_llm.get_available_models_sync()
+            config_names = {m["name"] for m in self.models}
             for model in ollama_api_models:
-                model_name = model["name"]
-                # 检查是否已存在
-                if not any(m["name"] == model_name for m in self.models):
-                    self.models.append(
-                        {
-                            "name": model_name,
-                            "provider": "ollama",
-                            "type": "local",
-                            "size": model.get("size", 0),
-                        }
-                    )
-            logging.info(f"从Ollama服务获取到 {len(ollama_api_models)} 个模型")
+                if model["name"] not in config_names:
+                    self.models.append({
+                        "name": model["name"],
+                        "provider": "ollama",
+                        "type": "local",
+                        "size": model.get("size", 0),
+                    })
+            logging.info(f"从Ollama实时获取到 {len(ollama_api_models)} 个模型")
         except Exception as e:
-            logging.error(f"从Ollama服务获取模型列表失败: {e}")
+            logging.error(f"从Ollama获取模型失败: {e}")
+
+    async def refresh_live(self) -> List[Dict[str, Any]]:
+        """实时从 Ollama API 拉取最新模型列表，替换 Ollama 部分"""
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.get(f"{self._ollama_url}/api/tags")
+                data = resp.json()
+                live_models = {
+                    m["name"]: {
+                        "name": m["name"],
+                        "provider": "ollama",
+                        "type": "local",
+                        "size": m.get("size", 0),
+                        "modified_at": m.get("modified_at", ""),
+                    }
+                    for m in data.get("models", [])
+                }
+            self.models = [
+                m for m in self.models if m["provider"] != "ollama"
+            ] + list(live_models.values())
+            logging.info(f"模型列表已刷新: {len(live_models)} 个 Ollama 模型 + {len(self.models) - len(live_models)} 个云模型")
+            return self.models
+        except Exception as e:
+            logging.error(f"刷新模型列表失败: {e}")
+            return self.models
 
     def get_models(self) -> List[Dict[str, Any]]:
-        """获取模型列表
-
-        Returns:
-            模型列表
-        """
         return self.models
 
 
@@ -124,9 +129,15 @@ class Assistant(IAssistant):
         # 新增：约束执行模块
         self.constraint_enforcement = constraint_enforcement
         
+        # Coding Tools 注册
+        from src.core.tools import register_all, tool_registry
+        register_all()
+        self.tool_registry = tool_registry
+
         # 服务和会话管理
         self.services: Dict[str, Any] = {}
         self.active_sessions: Dict[str, Dict[str, Any]] = {}
+        self._active_model: str = "gemma4:e4b"
 
     async def initialize(self, config: Dict[str, Any]):
         """初始化智能助理
@@ -258,25 +269,11 @@ class Assistant(IAssistant):
         """
         self.learning_manager.set_learning_rate(rate)
     
-    async def process_with_context(self, input_text: str, session_id: str) -> Dict[str, Any]:
-        """基于完整历史上下文处理
-        
-        Args:
-            input_text: 输入文本
-            session_id: 会话ID
-            
-        Returns:
-            处理结果
-        """
+    async def process_with_context(self, input_text: str, session_id: str, model: str = None) -> Dict[str, Any]:
         try:
-            # 1. 加载相关历史上下文
             context = await self.context_bridge.load_relevant_context(session_id, input_text)
-            
-            # 2. 加载认知状态
             cognitive_state = await self.state_persistence.load_cognitive_state()
-            
-            # 3. 增强推理
-            response = await self._enhanced_reasoning(input_text, context, cognitive_state)
+            response = await self._enhanced_reasoning(input_text, context, cognitive_state, model=model)
             
             # 4. 约束执行检查
             constraint_result = self.constraint_enforcement.check_constraints(
@@ -317,27 +314,75 @@ class Assistant(IAssistant):
         except Exception as e:
             logging.error(f"处理上下文失败: {e}")
             return {"error": str(e)}
-    
-    async def _enhanced_reasoning(self, input_text: str, context: Dict[str, Any], cognitive_state: Dict[str, Any]) -> Dict[str, Any]:
-        """增强推理
-        
-        Args:
-            input_text: 输入文本
-            context: 上下文信息
-            cognitive_state: 认知状态
-            
-        Returns:
-            推理结果
-        """
-        # 简化实现，实际应该使用更复杂的推理逻辑
-        response_text = f"基于上下文的回答: {input_text}"
-        
-        # 模拟推理结果
-        return {
-            "response": response_text,
-            "context_used": True,
-            "cognitive_state_updated": True
-        }
+
+    async def process_with_context_stream(self, input_text: str, session_id: str, model: str = None) -> AsyncGenerator[Dict[str, Any], None]:
+        try:
+            context = await self.context_bridge.load_relevant_context(session_id, input_text)
+            cognitive_state = await self.state_persistence.load_cognitive_state()
+
+            context_messages = []
+            if context and isinstance(context, dict):
+                history = context.get("history", [])
+                if isinstance(history, list):
+                    for msg in history[-5:]:
+                        if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                            context_messages.append({"role": msg["role"], "content": msg["content"]})
+
+            active_model = model or self._active_model
+
+            from .uncertainty.text_generator import text_generator
+            async for event in text_generator.generate_with_tools_stream(
+                prompt=input_text,
+                context=context_messages,
+                model=active_model,
+            ):
+                yield event
+
+        except Exception as e:
+            logging.error(f"流式处理失败: {e}")
+            yield {"type": "error", "content": str(e)}
+
+    async def _enhanced_reasoning(self, input_text: str, context: Dict[str, Any], cognitive_state: Dict[str, Any], model: str = None) -> Dict[str, Any]:
+        try:
+            from .uncertainty.text_generator import text_generator
+
+            context_messages = []
+            if context and isinstance(context, dict):
+                history = context.get("history", [])
+                if isinstance(history, list):
+                    for msg in history[-5:]:
+                        if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                            context_messages.append({"role": msg["role"], "content": msg["content"]})
+
+            active_model = model or self._active_model
+
+            # 尝试 tool-calling 流程
+            result = await text_generator.generate_with_tools(
+                prompt=input_text,
+                context=context_messages,
+                model=active_model,
+            )
+
+            response_text = result.get("text", "抱歉，我无法生成回答。")
+
+            return {
+                "response": response_text,
+                "context_used": True,
+                "cognitive_state_updated": True,
+                "confidence_score": 0.75,
+                "confidence_level": "medium",
+                "tool_rounds": result.get("tool_rounds", []),
+                "tool_count": result.get("tool_count", 0),
+            }
+        except Exception as e:
+            logging.error(f"增强推理失败: {e}")
+            return {
+                "response": f"基于上下文的回答: {input_text}",
+                "context_used": True,
+                "cognitive_state_updated": True,
+                "confidence_score": 0.75,
+                "confidence_level": "medium"
+            }
     
     async def self_improvement_cycle(self) -> Dict[str, Any]:
         """自我完善循环
@@ -423,3 +468,26 @@ class Assistant(IAssistant):
             活跃会话
         """
         return self.active_sessions
+
+    def list_tools(self) -> List[Dict[str, Any]]:
+        return self.tool_registry.list_tools()
+
+    async def execute_tool(self, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        result = await self.tool_registry.execute(tool_name, params)
+        return result.to_dict()
+
+    def get_active_model(self) -> str:
+        return self._active_model
+
+    def switch_model(self, model_name: str) -> bool:
+        available = {m["name"] for m in self.model_manager.get_models()}
+        if model_name not in available:
+            return False
+        self._active_model = model_name
+        from src.core.uncertainty.text_generator import initialize_text_generator
+        initialize_text_generator(ollama_url=self.model_manager._ollama_url, default_model=model_name)
+        logging.info(f"模型已切换为: {model_name}")
+        return True
+
+    async def refresh_models(self) -> List[Dict[str, Any]]:
+        return await self.model_manager.refresh_live()

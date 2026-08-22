@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: bayesian-agi-core-project
+  namespace: argocd
+spec:
+  description: Bayesian-AGI-Core 项目配置
+  
+  sourceRepos:
+    - 'https://github.com/your-username/bayesian-agi-core.git'
+    - 'https://github.com/your-username/charts.git'
+  
+  destinations:
+    - namespace: bayesian-agi
+      server: 'https://kubernetes.default.svc'
+    - namespace: bayesian-agi-staging
+      server: 'https://kubernetes.default.svc'
+  
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  
+  roles:
+    - name: admin
+      description: 项目管理员
+      policies:
+        - p, proj:bayesian-agi-core-project:admin, applications, *, bayesian-agi-core-project/*, allow
+      groups:
+        - bayesian-agi-admin
+    
+    - name: developer
+      description: 开发人员
+      policies:
+        - p, proj:bayesian-agi-core-project:developer, applications, sync, bayesian-agi-core-project/*, allow
+        - p, proj:bayesian-agi-core-project:developer, applications, get, bayesian-agi-core-project/*, allow
+      groups:
+        - bayesian-agi-developers
+    
+    - name: viewer
+      description: 只读访问
+      policies:
+        - p, proj:bayesian-agi-core-project:viewer, applications, get, bayesian-agi-core-project/*, allow
+      groups:
+        - bayesian-agi-viewers

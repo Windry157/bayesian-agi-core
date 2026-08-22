@@ -5,41 +5,175 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.10"
+  PROJECT_NAME: "bayesian-agi-core"
 
 jobs:
-  test:
+  # 代码质量检查
+  quality:
+    name: Code Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: ${{ env.PYTHON_VERSION }}
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install flake8 pytest pytest-asyncio pytest-cov black isort mypy
+
+      - name: Install project dependencies
+        run: |
           pip install -r requirements.txt
-      - name: Run tests
-        run: |
-          # 这里可以添加测试命令，例如 pytest
-          echo "Running tests..."
 
+      - name: Black Formatting Check
+        run: black --check .
+
+      - name: isort Check
+        run: isort --check .
+
+      - name: Flake8 Lint
+        run: flake8 src/ tests/ --max-line-length=120
+
+      - name: MyPy Type Check
+        run: mypy src/ --ignore-missing-imports
+
+  # 单元测试
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [quality]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio pytest-cov
+
+      - name: Install project dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Unit Tests
+        run: |
+          pytest tests/ -v --tb=short --cov=src --cov-report=xml --cov-report=term
+
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          flags: unit-tests
+
+  # 安全扫描
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install safety scanner
+        run: |
+          pip install safety bandit
+
+      - name: Dependency Vulnerability Scan
+        run: safety check --full-report
+
+      - name: Security Lint (Bandit)
+        run: bandit -r src/ -f json -o bandit-report.json || true
+
+      - name: Upload Bandit Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+
+  # 构建 Docker 镜像
   build:
-    needs: test
+    name: Build Docker Image
     runs-on: ubuntu-latest
+    needs: [security]
+    if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker images
-        run: |
-          docker-compose build
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  deploy:
-    needs: build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.PROJECT_NAME }}:${{ github.sha }}
+
+  # 部署到测试环境
+  deploy-test:
+    name: Deploy to Test Environment
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    needs: [build]
+    if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-      - name: Deploy to environment
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Test
         run: |
-          # 这里可以添加部署命令，例如使用 docker-compose 部署到服务器
-          echo "Deploying to environment..."
+          echo "Deploying to test environment..."
+          # 这里应该是实际的部署脚本
+          # kubectl apply -f k8s/test/deployment.yaml
+
+  # 通知
+  notify:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    needs: [deploy-test]
+    if: always()
+    steps:
+      - name: Notify success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          author_name: CI/CD Pipeline
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: job.status == 'success'
+
+      - name: Notify failure
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          author_name: CI/CD Pipeline
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: job.status == 'failure'

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bayesian-agi-core"
+version = "1.0.0"
+description = "Bayesian Free-Energy AGI Core"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --cov=src --cov-report=term --cov-report=xml --cov-fail-under=80"
+asyncio_mode = "auto"
+timeout = 60
+reruns = 2
+reruns_delay = 5
+
+[tool.pytest.ini_options.env]
+PYTHONPATH = "src"
+TESTING = "true"
+
+ignore = ["tests/integration/", "tests/e2e/"]

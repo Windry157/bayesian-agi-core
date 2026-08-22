@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package bayesian;
+
+service BayesianService {
+  rpc EvaluateCodeConfidence (CodeRequest) returns (ConfidenceResponse);
+  rpc RetrieveSimilarBugs (BugQuery) returns (BugList);
+  rpc PredictComplexity (CodeRequest) returns (ComplexityResponse);
+  rpc ActiveInference (InferenceRequest) returns (InferenceResponse);
+  rpc SemanticSearch (SearchRequest) returns (SearchResponse);
+  rpc Ping (PingRequest) returns (PongResponse);
+}
+
+message CodeRequest {
+  string code = 1;
+  string language = 2;
+}
+
+message ConfidenceResponse {
+  double confidence_score = 1;
+  string confidence_level = 2;
+  int32 cyclomatic_complexity = 3;
+  int32 cognitive_complexity = 4;
+  map<string, double> halstead_metrics = 5;
+}
+
+message BugQuery {
+  string query = 1;
+  int32 limit = 2;
+  string language = 3;
+  string severity = 4;
+}
+
+message BugEntry {
+  string id = 1;
+  string description = 2;
+  string root_cause = 3;
+  string solution = 4;
+  string language = 5;
+  string severity = 6;
+  double relevance_score = 7;
+}
+
+message BugList {
+  repeated BugEntry bugs = 1;
+  int32 total = 2;
+}
+
+message ComplexityResponse {
+  int32 cyclomatic = 1;
+  int32 cognitive = 2;
+  double maintainability_index = 3;
+  double predicted_bug_probability = 4;
+  string evolution_trend = 5;
+}
+
+message InferenceRequest {
+  string current_state = 1;
+  string goal_state = 2;
+  repeated string available_actions = 3;
+  repeated string constraints = 4;
+}
+
+message InferenceResponse {
+  string recommended_action = 1;
+  double expected_free_energy = 2;
+  repeated double action_probabilities = 3;
+  repeated string reasoning_chain = 4;
+  double confidence = 5;
+}
+
+message SearchRequest {
+  string query = 1;
+  repeated string layers = 2;
+  int32 limit = 3;
+}
+
+message SearchResult {
+  string content = 1;
+  string layer = 2;
+  double relevance_score = 3;
+  double importance = 4;
+}
+
+message SearchResponse {
+  repeated SearchResult results = 1;
+  int32 total = 2;
+}
+
+message PingRequest {}
+
+message PongResponse {
+  string message = 1;
+  int64 timestamp = 2;
+}

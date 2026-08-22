@@ -161,7 +161,7 @@ class AutoScalingManager:
         target_load = config.get("target_load", 0.7)
         
         # 计算期望实例数
-        desired = max(min_instances, min(max_instances, int(round(avg_load / target_load)))
+        desired = max(min_instances, min(max_instances, int(round(avg_load / target_load))))
         
         return desired
     

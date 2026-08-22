@@ -1,0 +1,79 @@
+# Prometheus 配置文件
+global:
+  scrape_interval: 15s  # 全局抓取间隔
+  evaluation_interval: 15s  # 规则评估间隔
+
+# 告警配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# 规则文件
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# 抓取配置
+scrape_configs:
+  # 监控 Prometheus 自身
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # 监控 Bayesian-AGI-Core 应用
+  - job_name: 'bayesian-agi-core'
+    static_configs:
+      - targets: ['host.docker.internal:8000']
+    metrics_path: '/health/metrics'
+    scrape_interval: 10s
+
+  # 监控节点（可选）
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node_exporter:9100']
+
+# 告警规则
+groups:
+  - name: bayesian-agi-core.rules
+    rules:
+      # 高延迟告警（超过5秒）
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(decision_making_latency_seconds_bucket[5m])) by (le)) > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "高延迟告警"
+          description: "95% 请求延迟超过 5 秒"
+
+      # 高错误率告警（超过10%）
+      - alert: HighErrorRate
+        expr: sum(rate(decision_making_errors_total[5m])) / sum(rate(decision_making_requests_total[5m])) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "高错误率告警"
+          description: "错误率超过 10%"
+
+      # 高成本告警（超过$10）
+      - alert: HighCost
+        expr: llm_tokens_input_total * 0.002 + llm_tokens_output_total * 0.006 > 10000  # $10 worth of tokens
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "高成本告警"
+          description: "Token 消耗成本超过 $10"
+
+      # 熔断器打开告警
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "熔断器打开"
+          description: "服务熔断器已打开，停止处理请求"

@@ -5,6 +5,8 @@ Agent 框架 - 实现复杂任务规划与执行
 基于 ReAct (Reasoning + Acting) 模式
 """
 
+import ast
+import operator
 import httpx
 import json
 from typing import List, Dict, Any, Optional, Callable
@@ -171,10 +173,37 @@ class CalculatorTool(Tool):
     
     async def execute(self, expression: str) -> str:
         try:
-            result = eval(expression, {"__builtins__": {}}, {})
+            result = _safe_eval(expression)
             return f"计算结果: {result}"
         except Exception as e:
             return f"计算错误: {str(e)}"
+
+def _safe_eval(expr: str) -> float:
+    _allowed_ops = {
+        ast.Add: operator.add, ast.Sub: operator.sub,
+        ast.Mult: operator.mul, ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod,
+        ast.Pow: operator.pow, ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
+    _allowed_nodes = (ast.Expression, ast.Constant, ast.UnaryOp, ast.BinOp)
+
+    node = ast.parse(expr.strip(), mode="eval")
+    def _eval(n):
+        if isinstance(n, ast.Constant):
+            if not isinstance(n.value, (int, float)):
+                raise ValueError(f"unsupported constant: {n.value}")
+            return n.value
+        if isinstance(n, ast.UnaryOp):
+            if type(n.op) not in _allowed_ops:
+                raise ValueError(f"unsupported operator: {type(n.op).__name__}")
+            return _allowed_ops[type(n.op)](_eval(n.operand))
+        if isinstance(n, ast.BinOp):
+            if type(n.op) not in _allowed_ops:
+                raise ValueError(f"unsupported operator: {type(n.op).__name__}")
+            return _allowed_ops[type(n.op)](_eval(n.left), _eval(n.right))
+        raise ValueError(f"unsupported expression: {type(n).__name__}")
+    return _eval(node.body)
 
 
 class WebSearchTool(Tool):

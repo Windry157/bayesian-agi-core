@@ -21,6 +21,10 @@ class MessageQueueManager:
     """消息队列管理器
 
     处理服务间的通信
+
+    NOTE: 此模块需要 RabbitMQ 服务运行。如果 RabbitMQ 不可用，
+    publish() 方法将记录警告并返回，subscribe() 方法将抛出异常。
+    请确保在生产环境中配置并运行 RabbitMQ。
     """
 
     def __init__(
@@ -45,30 +49,48 @@ class MessageQueueManager:
         self.connection = None
         self.channel = None
         self.callbacks = {}
+        self._connected = False
 
     def connect(self):
-        """连接到RabbitMQ"""
+        """连接到RabbitMQ
+
+        如果连接失败，会设置 _connected = False 并记录警告。
+        后续的 publish/subscribe 调用应该处理这种情况。
+        """
         try:
             credentials = pika.PlainCredentials(self.username, self.password)
             self.connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
-                    host=self.host, port=self.port, credentials=credentials
+                    host=self.host, port=self.port, credentials=credentials,
+                    connection_attempts=3,
+                    retry_delay=1
                 )
             )
             self.channel = self.connection.channel()
+            self._connected = True
             logger.info("成功连接到RabbitMQ")
         except Exception as e:
-            logger.error(f"连接RabbitMQ失败: {e}")
-            raise
+            self._connected = False
+            logger.warning(f"RabbitMQ未连接: {e}。消息队列功能将被禁用。")
+            # 不再抛出异常，允许服务在没有RabbitMQ的情况下运行
 
     def disconnect(self):
         """断开与RabbitMQ的连接"""
         if self.connection:
             try:
                 self.connection.close()
+                self._connected = False
                 logger.info("成功断开与RabbitMQ的连接")
             except Exception as e:
                 logger.error(f"断开RabbitMQ连接失败: {e}")
+
+    def is_connected(self) -> bool:
+        """检查是否已连接到RabbitMQ
+
+        Returns:
+            是否已连接
+        """
+        return self._connected and self.connection is not None and self.connection.is_open
 
     def declare_queue(self, queue_name: str):
         """声明队列
@@ -92,24 +114,33 @@ class MessageQueueManager:
         Args:
             queue_name: 队列名称
             message: 消息内容
+
+        Note:
+            如果RabbitMQ未连接，会记录警告并静默返回。
+            调用方应该使用HTTP或其他方式作为备用方案。
         """
-        if not self.channel:
-            self.connect()
+        if not self._connected:
+            logger.warning(f"RabbitMQ未连接，跳过消息发布到队列 {queue_name}: {message}")
+            return
 
         try:
-            self.declare_queue(queue_name)
-            self.channel.basic_publish(
-                exchange="",
-                routing_key=queue_name,
-                body=json.dumps(message),
-                properties=pika.BasicProperties(
-                    delivery_mode=2,  # 消息持久化
-                ),
-            )
-            logger.info(f"成功发布消息到队列 {queue_name}")
+            if not self.channel:
+                self.connect()
+
+            if self._connected:
+                self.declare_queue(queue_name)
+                self.channel.basic_publish(
+                    exchange="",
+                    routing_key=queue_name,
+                    body=json.dumps(message),
+                    properties=pika.BasicProperties(
+                        delivery_mode=2,  # 消息持久化
+                    ),
+                )
+                logger.info(f"成功发布消息到队列 {queue_name}")
         except Exception as e:
             logger.error(f"发布消息失败: {e}")
-            raise
+            # 不抛出异常，允许服务继续运行
 
     def subscribe(self, queue_name: str, callback: Callable[[Dict[str, Any]], None]):
         """订阅消息

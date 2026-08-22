@@ -1,0 +1,263 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types: [completed]
+    branches: [main]
+
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run'
+    environment:
+      name: staging
+      url: https://staging.bayesian-agi.example.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to Staging
+        run: |
+          echo "Deploying to staging server..."
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.STAGING_HOST }} << 'ENDSSH'
+            cd /opt/bayesian-agi
+            echo "Pulling latest code..."
+            git pull origin main
+            echo "Installing dependencies..."
+            pip install -r requirements.txt
+            echo "Restarting service..."
+            sudo systemctl restart bayesian-agi
+            echo "Checking service status..."
+            sudo systemctl status bayesian-agi --no-pager
+          ENDSSH
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests..."
+
+          # Wait for service to start
+          sleep 10
+
+          # Health check
+          echo "Checking health endpoint..."
+          curl -f https://staging.bayesian-agi.example.com/health || exit 1
+
+          # MCP Server health check
+          echo "Checking MCP Server..."
+          curl -f https://staging.bayesian-agi.example.com:8090/health || exit 1
+
+          echo "Smoke tests passed!"
+
+      - name: Notify on Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL }}
+          payload: |
+            {
+              "text": "Staging deployment ${{ job.status }}: ${{ github.event.repository.name }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Staging Deployment ${{ job.status }}*"
+                  }
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "Commit: ${{ github.sha }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: production
+      url: https://bayesian-agi.example.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Backup current version
+        run: |
+          echo "Creating backup..."
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.PRODUCTION_HOST }} << 'ENDSSH'
+            BACKUP_DIR="/opt/bayesian-agi/backups/$(date +%Y%m%d_%H%M%S)"
+            mkdir -p $BACKUP_DIR
+            cp -r /opt/bayesian-agi/* $BACKUP_DIR/
+            echo "${{ github.ref }}" > $BACKUP_DIR/version.txt
+            echo "${{ github.sha }}" >> $BACKUP_DIR/version.txt
+            ln -sf $BACKUP_DIR /opt/bayesian-agi/backups/current
+            echo "Backup created at $BACKUP_DIR"
+          ENDSSH
+
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to production server..."
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.PRODUCTION_HOST }} << 'ENDSSH'
+            cd /opt/bayesian-agi
+            echo "Pulling latest code..."
+            git pull origin main
+            echo "Installing dependencies..."
+            pip install -r requirements.txt
+            echo "Restarting service..."
+            sudo systemctl restart bayesian-agi
+            echo "Checking service status..."
+            sudo systemctl status bayesian-agi --no-pager
+          ENDSSH
+
+      - name: Run smoke tests
+        run: |
+          echo "Running production smoke tests..."
+
+          # Wait for service to start
+          sleep 15
+
+          # Health check
+          echo "Checking health endpoint..."
+          curl -f https://bayesian-agi.example.com/health || exit 1
+
+          # MCP Server health check
+          echo "Checking MCP Server..."
+          curl -f https://bayesian-agi.example.com:8090/health || exit 1
+
+          # API test
+          echo "Checking API..."
+          curl -f https://bayesian-agi.example.com/api/models || exit 1
+
+          echo "Production smoke tests passed!"
+
+      - name: Notify on Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL }}
+          payload: |
+            {
+              "text": "Production deployment ${{ job.status }}: ${{ github.event.repository.name }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment ${{ job.status }}* :rocket:"
+                  }
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "Tag: ${{ github.ref }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "Commit: ${{ github.sha }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  rollback:
+    runs-on: ubuntu-latest
+    if: failure() && github.event_name == 'push'
+    needs: deploy-production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Automatic Rollback
+        run: |
+          echo "Deployment failed! Initiating automatic rollback..."
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.PRODUCTION_HOST }} << 'ENDSSH'
+            cd /opt/bayesian-agi
+
+            # Find previous backup
+            PREVIOUS_BACKUP=$(ls -t /opt/bayesian-agi/backups/ | head -2 | tail -1)
+            if [ -z "$PREVIOUS_BACKUP" ]; then
+              echo "No backup found for rollback!"
+              exit 1
+            fi
+
+            BACKUP_PATH="/opt/bayesian-agi/backups/$PREVIOUS_BACKUP"
+            echo "Rolling back to $BACKUP_PATH..."
+
+            # Stop service
+            sudo systemctl stop bayesian-agi
+
+            # Restore files
+            cp -r $BACKUP_PATH/* /opt/bayesian-agi/
+
+            # Restart service
+            sudo systemctl start bayesian-agi
+
+            echo "Rollback completed!"
+            sudo systemctl status bayesian-agi --no-pager
+          ENDSSH
+
+      - name: Notify rollback
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL }}
+          payload: |
+            {
+              "text": "AUTOMATIC ROLLBACK: ${{ github.event.repository.name }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*AUTOMATIC ROLLBACK* :warning:"
+                  }
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "Deployment failed, rolled back to previous version"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

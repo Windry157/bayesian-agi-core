@@ -53,5 +53,5 @@ def test_update_cache_updates_existing_key_without_evicting():
     memory._update_cache("b", "content_b_updated")
 
     assert len(memory.cache) == 3
-    assert memory.cache["b"]["content"] == "content_b_updated"
+    assert memory.cache["b"] == "content_b_updated"
     assert list(memory.cache.keys()) == ["a", "c", "b"]

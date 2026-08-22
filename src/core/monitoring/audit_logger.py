@@ -248,9 +248,10 @@ class AuditLogger:
             error_message=error_message
         )
         
-        if self.enable_async:
+        if self.enable_async and self._running and self._processor_task:
             await self._queue.put(event)
         else:
+            # 异步处理管线未启动时直接同步处理，避免事件静默滞留队列
             await self._process_single_event(event)
         
         return event_id

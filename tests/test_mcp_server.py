@@ -9,7 +9,8 @@ import pytest
 import json
 import asyncio
 from httpx import AsyncClient, ASGITransport
-from src.mcp_server import app, BayesianMCPServer
+from src.mcp.app import app
+from src.mcp.server import BayesianMCPServer
 
 
 @pytest.fixture

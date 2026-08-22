@@ -1,152 +1,94 @@
 version: '3.8'
 
+# =============================================================================
+# 衡枢Agent (Bayesian-AGI-Core) Docker Compose
+#
+# ⚠️ 实际生产部署使用 hengshu-network 上的独立容器（通过 1Panel 管理）。
+#    以下是用 docker compose 本地开发 / 测试的轻量配置。
+#
+# 生产环境实际运行的容器：
+#   hengshu-agent (port 8000)  — 主应用 (uvicorn src.main:app)
+#   hengshu-mcp    (port 8090)  — MCP 服务器 (uvicorn src.mcp_server:app)
+#   hengshu-chroma (port 8001)  — ChromaDB 向量数据库
+#   openai-bridge  (port 8003)  — OpenAI 兼容 API 桥接
+#   hengshu-redis               — Redis 缓存
+#   hengshu-nginx  (port 80)    — Nginx 反向代理
+#   hengshu-grafana (port 3001) — Grafana 监控面板
+#   hengshu-webui  (port 3000)  — Open WebUI
+#   hengshu-prometheus (port 9090) — Prometheus 监控
+#
+# 消息通道通过 Hermes Agent (port 9119, 1Panel 管理) 处理，替代自建 message-gateway。
+# =============================================================================
+
 services:
-  # API Gateway
-  api-gateway:
+  # 主应用 — 单体 FastAPI 服务
+  app:
     build:
       context: .
-      dockerfile: Dockerfile.api-gateway
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    depends_on:
-      - llm-service
-      - memory-service
-      - cognition-service
-      - vision-service
-      - multimodal-service
-      - rabbitmq
     environment:
-      - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-      - LLM_SERVICE_URL=http://llm-service:8001
-      - MEMORY_SERVICE_URL=http://memory-service:8002
-      - COGNITION_SERVICE_URL=http://cognition-service:8003
-      - VISION_SERVICE_URL=http://vision-service:8004
-      - MULTIMODAL_SERVICE_URL=http://multimodal-service:8005
-
-  # LLM Service
-  llm-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.llm-service
-    ports:
-      - "8001:8001"
-    depends_on:
-      - rabbitmq
-    environment:
-      - RABBITMQ_URL=amqp://rabbitmq:5672
       - OLLAMA_URL=http://host.docker.internal:11434
-
-  # Memory Service
-  memory-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.memory-service
-    ports:
-      - "8002:8002"
-    depends_on:
-      - rabbitmq
-      - postgres
-    environment:
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-      - MEMORY_DIR=/app/memory
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DATABASE=bayesian_agi
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
     volumes:
-      - ./memory:/app/memory
+      - ./data:/app/data
+      - ./logs:/app/logs
 
-  # Cognition Service
-  cognition-service:
+  # MCP 服务器 — 贝叶斯认知引擎
+  mcp:
     build:
       context: .
-      dockerfile: Dockerfile.cognition-service
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8090"
+    command: python -m uvicorn src.mcp_server:app --host 0.0.0.0 --port 8090
+
+  # OpenAI 兼容桥接
+  openai-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8003:8003"
-    depends_on:
-      - rabbitmq
+    command: python -m uvicorn openai_bridge:app --host 0.0.0.0 --port 8003
     environment:
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - OLLAMA_URL=http://host.docker.internal:11434
 
-  # Vision Service
-  vision-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.vision-service
+  # ChromaDB 向量数据库
+  chroma:
+    image: chromadb/chroma:1.5.8-curl
     ports:
-      - "8004:8004"
-    depends_on:
-      - rabbitmq
-    environment:
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-
-  # Multimodal Service
-  multimodal-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.multimodal-service
-    ports:
-      - "8005:8005"
-    depends_on:
-      - rabbitmq
-    environment:
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-
-  # RabbitMQ
-  rabbitmq:
-    image: rabbitmq:3.13-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-
-  # PostgreSQL
-  postgres:
-    image: postgres:15
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_DB=bayesian_agi
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - "8001:8000"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - chroma_data:/chroma/chroma_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # Prometheus
+  # Prometheus 监控
   prometheus:
-    image: prom/prometheus:v2.45.0
+    image: prom/prometheus:v2.45.6
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
 
-  # Message Channel Gateway
-  message-gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile.gateway
-    ports:
-      - "8500:8500"
-    depends_on:
-      - api-gateway
-    environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
-      - ENGINE_URL=http://api-gateway:8000
-      - MCP_URL=http://api-gateway:8090/mcp
-
-  # Grafana
+  # Grafana 监控面板
   grafana:
-    image: grafana/grafana:9.5.2
+    image: grafana/grafana:10.4.13
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       - prometheus
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
 
 volumes:
-  postgres_data:
+  chroma_data:
+  prometheus_data:

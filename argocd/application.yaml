@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bayesian-agi-core
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: 'https://github.com/your-username/bayesian-agi-core.git'
+    targetRevision: main
+    path: k8s/
+    helm:
+      valueFiles:
+        - values.yaml
+  
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: bayesian-agi
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /spec/minReplicas
+        - /spec/maxReplicas
+  
+  info:
+    - name: Repository
+      value: https://github.com/your-username/bayesian-agi-core
+    - name: Environment
+      value: production
+    - name: Contact
+      value: devops@bayesian-agi-core.com

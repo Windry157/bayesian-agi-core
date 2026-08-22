@@ -1,132 +1,73 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Vision Service
-处理与视觉相关的请求
-"""
-
-import os
-import logging
-from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
+import os, io, base64
+from fastapi import HTTPException, UploadFile, File
 from PIL import Image
-import numpy as np
-from src.core.monitoring import monitoring
+import httpx
+from src.utils.service_base import create_service_app, run_service
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-
-# 创建FastAPI应用
-app = FastAPI(
-    title="Bayesian-AGI-Core Vision Service",
-    description="Vision Service for Bayesian-AGI-Core",
-    version="1.0.0",
+app, logger = create_service_app(
+    "Bayesian-AGI-Core Vision Service",
+    "Vision Service for Bayesian-AGI-Core",
+    "vision",
 )
 
-# 配置CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-)
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+VISION_MODEL = os.environ.get("VISION_MODEL", "gemma3:1b")
+
+async def _call_ollama_vision(prompt: str, image_bytes: bytes) -> str:
+    b64 = base64.b64encode(image_bytes).decode()
+    async with httpx.AsyncClient(timeout=60) as client:
+        r = await client.post(f"{OLLAMA_URL}/api/chat", json={
+            "model": VISION_MODEL,
+            "messages": [{"role": "user", "content": prompt, "images": [b64]}],
+            "stream": False, "options": {"temperature": 0.1}
+        })
+        r.raise_for_status()
+        return r.json()["message"]["content"].strip()
 
 
-# 健康检查
-@app.get("/health")
-async def health_check():
-    """健康检查"""
-    return {"status": "ok", "message": "Vision Service is running"}
-
-
-# 图像分类
 @app.post("/api/vision/classify")
 async def classify_image(file: UploadFile = File(...)):
-    """图像分类"""
     try:
-        # 读取图像
-        image = Image.open(file.file)
-        # 模拟分类结果
-        # 实际应用中，这里应该使用真实的视觉模型进行分类
-        classification = "cat"
-        confidence = 0.95
-        logger.info(f"图像分类结果: {classification}, 置信度: {confidence}")
-        return {"classification": classification, "confidence": confidence}
+        image_bytes = await file.read()
+        Image.open(io.BytesIO(image_bytes)).verify()
+        description = await _call_ollama_vision(
+            "Classify this image in a single word (e.g. cat, dog, car, building, person, food, landscape). Return only the word.",
+            image_bytes)
+        classification = description.split()[0].strip().lower().rstrip(".,!?")
+        logger.info("Classify: %s", classification)
+        return {"classification": classification, "confidence": 0.0}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to classify image: {e}")
+        raise HTTPException(status_code=500, detail=f"Classify failed: {e}")
 
 
-# 目标检测
 @app.post("/api/vision/detect")
 async def detect_objects(file: UploadFile = File(...)):
-    """目标检测"""
     try:
-        # 读取图像
-        image = Image.open(file.file)
-        # 模拟检测结果
-        # 实际应用中，这里应该使用真实的视觉模型进行目标检测
-        objects = [
-            {"class": "person", "confidence": 0.98, "bbox": [100, 100, 200, 300]},
-            {"class": "car", "confidence": 0.92, "bbox": [300, 200, 500, 350]},
-        ]
-        logger.info(f"目标检测结果: {objects}")
-        return {"objects": objects}
+        image_bytes = await file.read()
+        Image.open(io.BytesIO(image_bytes)).verify()
+        result = await _call_ollama_vision(
+            "List all objects you can see in this image. For each object, provide its name and approximate location "
+            "(e.g. 'person at center-left, car at bottom-right'). Return as a bullet list.", image_bytes)
+        logger.info("Detect: %s...", result[:200])
+        return {"objects": result}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to detect objects: {e}")
+        raise HTTPException(status_code=500, detail=f"Detection failed: {e}")
 
 
-# 图像描述
 @app.post("/api/vision/describe")
 async def describe_image(file: UploadFile = File(...)):
-    """图像描述"""
     try:
-        # 读取图像
-        image = Image.open(file.file)
-        # 模拟描述结果
-        # 实际应用中，这里应该使用真实的视觉模型生成描述
-        description = "A cat sitting on a couch"
-        logger.info(f"图像描述结果: {description}")
+        image_bytes = await file.read()
+        Image.open(io.BytesIO(image_bytes)).verify()
+        description = await _call_ollama_vision(
+            "Describe this image in detail. Include objects, colors, composition, and any text you can see.",
+            image_bytes)
+        logger.info("Describe: %s...", description[:100])
         return {"description": description}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to describe image: {e}")
-
-
-# 根路径
-@app.get("/")
-async def root():
-    """根路径"""
-    return {
-        "message": "Welcome to Bayesian-AGI-Core Vision Service",
-        "version": "1.0.0",
-        "docs": "/docs",
-    }
-
-
-# Prometheus指标端点
-@app.get("/health/metrics")
-def metrics():
-    """Prometheus指标端点"""
-    try:
-        # 简单的指标数据
-        return """
-# HELP http_requests_total Total HTTP Requests
-# TYPE http_requests_total counter
-http_requests_total 100
-
-# HELP http_request_duration_seconds HTTP Request Duration
-# TYPE http_request_duration_seconds histogram
-test_metric 42
-"""
-    except Exception as e:
-        logger.error(f"Metrics error: {e}")
-        return f"Error: {str(e)}"
+        raise HTTPException(status_code=500, detail=f"Describe failed: {e}")
 
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run("src.vision_service", host="0.0.0.0", port=8004, reload=True)
+    run_service("src.vision_service", port=8004)

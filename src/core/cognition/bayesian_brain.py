@@ -149,12 +149,12 @@ class BayesianBrain(IBayesianBrain):
         problem = f"从{possible_actions}中选择最佳行动，基于信息增益和预期价值"
         chain = self.chain_of_thought.generate_chain(problem, situation)
 
-        # 使用认知协调器做出最终决策
-        decision = self.cognition_coordinator.make_decision(situation)
-        
-        # 尊重认知协调器的决策（如果有）
-        if "decision" in decision and decision["decision"] in possible_actions:
-            best_action = decision["decision"]
+        # 使用认知协调器做出最终决策（如果有）
+        if self.cognition_coordinator:
+            decision = self.cognition_coordinator.make_decision(situation)
+            # 尊重认知协调器的决策（如果有）
+            if "decision" in decision and decision["decision"] in possible_actions:
+                best_action = decision["decision"]
 
         # 记录行动
         self.actions.append(best_action)

@@ -1,0 +1,10 @@
+# Cursor 配置模板（火山引擎 方舟 doubao-code）
+# 请将 <AccessKeyID> 和 <SecretAccessKey> 替换为你实际的 AK/SK
+
+API Base URL: https://ark.cn-beijing.volces.com/api/v3
+API Key: <AccessKeyID>/<SecretAccessKey>
+Model: doubao-code
+
+# 说明：
+# - API Key 中间必须用斜杠 `/` 连接，示例：AKxxxx/SKyyyy
+# - 本文件仅为示例模板，请妥善保管真实密钥，不要提交到公共仓库。

@@ -103,9 +103,6 @@ class MonitoringService:
                 # 记录服务健康状态
                 status = 1.0 if info["availability_rate"] > 0 else 0.0
                 monitoring.record_service_health(service_name, status)
-                
-                # 异步记录服务健康状态
-                await monitoring.async_record_service_health(service_name, status)
             
             logger.debug(f"服务健康状态收集完成: {availability}")
             

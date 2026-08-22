@@ -1,0 +1,11 @@
+{
+  // VSCode Cline 插件 配置示例
+  "cline.service": "openai-compatible",
+  "cline.endpoint": "https://ark.cn-beijing.volces.com/api/v3",
+  "cline.apiKey": "<AccessKeyID>/<SecretAccessKey>",
+  "cline.model": "doubao-code"
+}
+
+/* 说明：
+- 将 `<AccessKeyID>/<SecretAccessKey>` 替换为你的实际密钥格式，例如：AKxxx/SKyyy
+- 请勿将包含真实密钥的文件提交到公共仓库。*/

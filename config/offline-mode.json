@@ -1,0 +1,22 @@
+{
+  "use_offline_mode": true,
+  "allow_fallback": true,
+  "skip_network_checks": false,
+  
+  "memory": {
+    "use_vector_index": false,
+    "use_knowledge_graph": true,
+    "use_llm_entity_extractor": false,
+    "use_msgpack": true,
+    "buffer_size": 100
+  },
+  
+  "knowledge_graph": {
+    "use_rule_based_extractor": true,
+    "use_embeddings": false
+  },
+  
+  "vector_index": {
+    "use_simple_matching": true
+  }
+}

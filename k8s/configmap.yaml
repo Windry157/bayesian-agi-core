@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bayesian-agi-core-config
+  namespace: default
+data:
+  # LLM 配置
+  ollama_url: "http://ollama-service:11434"
+  default_model: "gemma4:e4b"
+  
+  # 服务器配置
+  server_host: "0.0.0.0"
+  server_port: "8000"
+  
+  # 日志配置
+  log_level: "INFO"
+  log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # 安全配置
+  security_level: "strict"
+  
+  # 内存配置
+  memory_backend: "chromadb"
+  memory_path: "/app/memory"
+  
+  # 可观测性配置
+  metrics_enabled: "true"
+  tracing_enabled: "true"

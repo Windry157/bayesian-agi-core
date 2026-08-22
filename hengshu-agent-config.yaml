@@ -1,0 +1,138 @@
+# HengshuAgent 生产环境配置
+
+# 服务器配置
+server:
+  host: 0.0.0.0
+  port: 8000
+  workers: 8
+  timeout: 120
+
+# LLM 配置
+models:
+  ollama_url: http://ollama-service:11434
+  default: gemma4:e4b
+  fallback_model: llama3.1:8b
+
+# 安全配置
+security:
+  level: strict
+  max_request_size: 50MB
+  rate_limit: 1000/second
+
+# 内存配置
+memory:
+  backend: chromadb
+  path: /data/memory
+  max_results: 100
+
+# 数据库配置
+database:
+  type: postgresql
+  host: db-service
+  port: 5432
+  name: hengshu_agent
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+
+# 消息队列配置
+queue:
+  type: rabbitmq
+  host: rabbitmq-service
+  port: 5672
+  user: ${RABBITMQ_USER}
+  password: ${RABBITMQ_PASSWORD}
+
+# 可观测性配置
+observability:
+  metrics_enabled: true
+  tracing_enabled: true
+  logging_level: INFO
+  log_format: json
+
+# 告警配置
+alerts:
+  enabled: true
+  slack_webhook: ${SLACK_WEBHOOK}
+  pagerduty_key: ${PAGERDUTY_KEY}
+
+# 自愈配置
+self_healing:
+  enabled: true
+  auto_recovery: true
+  max_retries: 3
+
+# 部署配置
+deployment:
+  environment: production
+  region: cn
+  zone: zone-a
+
+# 缓存配置
+cache:
+  type: redis
+  host: redis-service
+  port: 6379
+  ttl: 3600
+
+# 限流配置
+rate_limiting:
+  enabled: true
+  strategies:
+    - path: /api/*
+      limit: 1000
+      window: 1
+
+# 熔断器配置
+circuit_breaker:
+  enabled: true
+  failure_threshold: 50
+  recovery_timeout: 60
+  max_concurrent_requests: 1000
+
+# 监控配置
+monitoring:
+  prometheus:
+    enabled: true
+    endpoint: /metrics
+  health_check:
+    enabled: true
+    endpoint: /health
+
+# 认证配置
+auth:
+  jwt_secret: ${JWT_SECRET}
+  jwt_expiry: 86400
+  oauth_providers:
+    - name: google
+      enabled: false
+    - name: github
+      enabled: false
+
+# API 配置
+api:
+  cors_enabled: true
+  cors_origins:
+    - https://*.hengshu-agent.com
+  version: v1
+  debug: false
+
+# 日志配置
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_path: /var/log/hengshu-agent/
+  max_file_size: 100MB
+  backup_count: 5
+
+# 备份配置
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention_days: 30
+  storage_path: /backup/
+
+# 升级配置
+upgrade:
+  auto_upgrade: false
+  upgrade_channel: stable
+  notification_email: ops@hengshu-agent.com

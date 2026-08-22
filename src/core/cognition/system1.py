@@ -6,6 +6,7 @@
 """
 
 import time
+import ast
 from typing import Dict, List, Optional, Any
 
 
@@ -157,7 +158,7 @@ class System1:
             return "novel_decision"
 
     def _calculate_similarity(
-        self, situation1: Dict[str, Any], situation2: Dict[str, Any]
+        self, situation1: Any, situation2: Any
     ) -> float:
         """计算两个情况的相似度
 
@@ -168,6 +169,27 @@ class System1:
         Returns:
             相似度（0-1）
         """
+        # 兼容字符串键（经验记忆存储为 str）
+        if isinstance(situation1, str) and isinstance(situation2, dict):
+            try:
+                s1 = ast.literal_eval(situation1)
+                if isinstance(s1, dict):
+                    situation1 = s1
+            except (ValueError, SyntaxError):
+                return 0.0
+        elif isinstance(situation2, str) and isinstance(situation1, dict):
+            try:
+                s2 = ast.literal_eval(situation2)
+                if isinstance(s2, dict):
+                    situation2 = s2
+            except (ValueError, SyntaxError):
+                return 0.0
+        elif isinstance(situation1, str) and isinstance(situation2, str):
+            return 1.0 if situation1 == situation2 else 0.0
+
+        if not isinstance(situation1, dict) or not isinstance(situation2, dict):
+            return 0.0
+
         # 简单的相似度计算
         common_keys = set(situation1.keys()) & set(situation2.keys())
         if not common_keys:

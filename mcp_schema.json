@@ -1,0 +1,643 @@
+{
+  "name": "bayesian-agi-core",
+  "version": "1.0.0",
+  "description": "贝叶斯推理引擎 - Bayesian-AGI-Core MCP Server",
+  "protocol_version": "2024-11-05",
+
+  "server_info": {
+    "name": "BayesianAGICore",
+    "version": "1.0.0",
+    "description": "具备贝叶斯推理、主动推理、自由能原理的智能认知引擎",
+    "capabilities": [
+      "bayesian_reasoning",
+      "active_inference",
+      "free_energy_optimization",
+      "multi_layer_memory",
+      "code_confidence_evaluation",
+      "semantic_search"
+    ]
+  },
+
+  "announcement": {
+    "identity": {
+      "type": "Bayesian Cognitive Engine",
+      "name": "贝叶斯大脑",
+      "description": "我是一个拥有贝叶斯推理能力的外部认知引擎，擅长概率推断、置信度评估和主动推理"
+    },
+    "endpoints": {
+      "mcp_server": "http://localhost:8090/mcp",
+      "api_gateway": "http://localhost:8080",
+      "health_check": "http://localhost:8090/health"
+    }
+  },
+
+  "tools": {
+    "$defs": {
+      "evaluate_code_confidence": {
+        "name": "evaluate_code_confidence",
+        "description": "使用贝叶斯方法评估代码的置信度和风险等级",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "需要评估的代码片段"
+            },
+            "language": {
+              "type": "string",
+              "description": "编程语言 (python, javascript, typescript, java, go, rust)",
+              "enum": ["python", "javascript", "typescript", "java", "go", "rust"]
+            },
+            "context": {
+              "type": "object",
+              "description": "额外的上下文信息（项目类型、历史bug等）",
+              "properties": {
+                "project_type": {"type": "string"},
+                "recent_bugs": {"type": "array", "items": {"type": "string"}},
+                "code_patterns": {"type": "array", "items": {"type": "string"}}
+              }
+            }
+          },
+          "required": ["code", "language"]
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "confidence_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "综合置信度分数 (0-1)"
+            },
+            "confidence_level": {
+              "type": "string",
+              "enum": ["very_low", "low", "medium", "high", "very_high"],
+              "description": "置信度等级"
+            },
+            "risk_factors": {
+              "type": "array",
+              "description": "风险因子列表",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "factor": {"type": "string"},
+                  "probability": {"type": "number"},
+                  "impact": {"type": "string"}
+                }
+              }
+            },
+            "bayesian_details": {
+              "type": "object",
+              "description": "贝叶斯推理详细过程",
+              "properties": {
+                "prior_probability": {"type": "number"},
+                "likelihood": {"type": "number"},
+                "posterior_probability": {"type": "number"},
+                "evidence_strength": {"type": "number"}
+              }
+            },
+            "suggestions": {
+              "type": "array",
+              "description": "改进建议",
+              "items": {"type": "string"}
+            }
+          }
+        }
+      },
+
+      "retrieve_similar_bugs": {
+        "name": "retrieve_similar_bugs",
+        "description": "基于向量相似度搜索历史类似bug和修复方案",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "当前问题或错误描述"
+            },
+            "limit": {
+              "type": "integer",
+              "description": "返回结果数量限制",
+              "default": 5,
+              "minimum": 1,
+              "maximum": 20
+            },
+            "filters": {
+              "type": "object",
+              "properties": {
+                "language": {"type": "string"},
+                "severity": {"type": "string", "enum": ["critical", "high", "medium", "low"]},
+                "date_range": {
+                  "type": "object",
+                  "properties": {
+                    "start": {"type": "string", "format": "date-time"},
+                    "end": {"type": "string", "format": "date-time"}
+                  }
+                }
+              }
+            }
+          },
+          "required": ["query"]
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "bug_id": {"type": "string"},
+                  "description": {"type": "string"},
+                  "similarity_score": {"type": "number"},
+                  "root_cause": {"type": "string"},
+                  "solution": {"type": "string"},
+                  "fix_confidence": {"type": "number"},
+                  "language": {"type": "string"},
+                  "severity": {"type": "string"},
+                  "resolved_at": {"type": "string", "format": "date-time"}
+                }
+              }
+            },
+            "total_matches": {"type": "integer"},
+            "search_time_ms": {"type": "number"}
+          }
+        }
+      },
+
+      "predict_complexity": {
+        "name": "predict_complexity",
+        "description": "使用贝叶斯网络预测代码复杂度和发展趋势",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "code": {"type": "string", "description": "代码片段"},
+            "language": {"type": "string"},
+            "history": {
+              "type": "array",
+              "description": "代码修改历史",
+              "items": {"type": "string"}
+            }
+          },
+          "required": ["code", "language"]
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "cyclomatic_complexity": {"type": "number"},
+            "cognitive_complexity": {"type": "number"},
+            "maintainability_index": {"type": "number"},
+            "predicted_bug_probability": {"type": "number"},
+            "evolution_trend": {
+              "type": "string",
+              "enum": ["improving", "stable", "deteriorating"]
+            },
+            "risk_areas": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        }
+      },
+
+      "analyze_reasoning_chain": {
+        "name": "analyze_reasoning_chain",
+        "description": "分析推理链路的置信度和一致性，检测逻辑矛盾",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "reasoning_steps": {
+              "type": "array",
+              "description": "推理步骤列表",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "step_id": {"type": "string"},
+                  "description": {"type": "string"},
+                  "confidence": {"type": "number"},
+                  "premise_ids": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            },
+            "goal": {"type": "string", "description": "最终目标"}
+          },
+          "required": ["reasoning_steps", "goal"]
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "chain_validity": {"type": "number"},
+            "confidence_propagation": {
+              "type": "array",
+              "items": {"type": "number"}
+            },
+            "bottlenecks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "step_id": {"type": "string"},
+                  "issue": {"type": "string"},
+                  "suggested_fix": {"type": "string"}
+                }
+              }
+            },
+            "contradictions": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "overall_confidence": {"type": "number"}
+          }
+        }
+      },
+
+      "optimize_memory": {
+        "name": "optimize_memory",
+        "description": "执行自由能最小化，优化记忆权重和召回策略",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": ["compact", "reinforce", "prune", "snapshot"],
+              "description": "优化动作"
+            },
+            "target": {
+              "type": "string",
+              "enum": ["short_term", "medium_term", "long_term", "all"],
+              "default": "all"
+            },
+            "criteria": {
+              "type": "object",
+              "description": "优化标准",
+              "properties": {
+                "min_importance": {"type": "number"},
+                "max_items": {"type": "integer"},
+                "age_threshold_hours": {"type": "number"}
+              }
+            }
+          },
+          "required": ["action"]
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "action_taken": {"type": "string"},
+            "items_affected": {"type": "integer"},
+            "free_energy_before": {"type": "number"},
+            "free_energy_after": {"type": "number"},
+            "energy_reduction_percent": {"type": "number"},
+            "memory_stats": {
+              "type": "object",
+              "properties": {
+                "short_term_count": {"type": "integer"},
+                "medium_term_count": {"type": "integer"},
+                "long_term_count": {"type": "integer"},
+                "total_items": {"type": "integer"}
+              }
+            }
+          }
+        }
+      },
+
+      "active_inference": {
+        "name": "active_inference",
+        "description": "基于主动推理和自由能原理生成最优行动建议",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "current_state": {"type": "string", "description": "当前状态描述"},
+            "goal_state": {"type": "string", "description": "目标状态"},
+            "available_actions": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "可选行动列表"
+            },
+            "constraints": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          },
+          "required": ["current_state", "goal_state", "available_actions"]
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "recommended_action": {"type": "string"},
+            "expected_outcome": {"type": "string"},
+            "action_probabilities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "action": {"type": "string"},
+                  "probability": {"type": "number"},
+                  "expected_free_energy": {"type": "number"}
+                }
+              }
+            },
+            "reasoning_chain": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "confidence": {"type": "number"}
+          }
+        }
+      },
+
+      "semantic_search": {
+        "name": "semantic_search",
+        "description": "跨层记忆的语义搜索，返回相关记忆片段和上下文",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {"type": "string"},
+            "memory_layers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["short_term", "medium_term", "long_term", "knowledge_graph"]
+              },
+              "default": ["medium_term", "long_term"]
+            },
+            "limit": {"type": "integer", "default": 5},
+            "include_metadata": {"type": "boolean", "default": true}
+          },
+          "required": ["query"]
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "content": {"type": "string"},
+                  "layer": {"type": "string"},
+                  "relevance_score": {"type": "number"},
+                  "access_count": {"type": "number"},
+                  "last_accessed": {"type": "string"},
+                  "importance": {"type": "number"}
+                }
+              }
+            },
+            "total_results": {"type": "integer"},
+            "search_metadata": {
+              "type": "object",
+              "properties": {
+                "query_time_ms": {"type": "number"},
+                "layers_searched": {"type": "array"},
+                "index_size": {"type": "number"}
+              }
+            }
+          }
+        }
+      },
+
+      "generate_insight": {
+        "name": "generate_insight",
+        "description": "基于历史数据生成深度洞察和模式识别",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "topic": {"type": "string"},
+            "data_sources": {
+              "type": "array",
+              "items": {"type": "string"},
+              "enum": ["memory", "codebase", "bugs", "reasoning_history", "all"]
+            },
+            "depth": {
+              "type": "string",
+              "enum": ["surface", "deep", "comprehensive"],
+              "default": "deep"
+            }
+          },
+          "required": ["topic"]
+        },
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "insights": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": {"type": "string"},
+                  "description": {"type": "string"},
+                  "confidence": {"type": "number"},
+                  "evidence": {"type": "array", "items": {"type": "string"}},
+                  "implications": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            },
+            "patterns_identified": {"type": "array", "items": {"type": "string"}},
+            "recommendations": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    }
+  },
+
+  "resources": {
+    "$defs": {
+      "memory_snapshot": {
+        "uri": "bayesian://memory/snapshot",
+        "name": "记忆快照",
+        "description": "当前记忆系统的完整快照，包含各层记忆的状态和统计",
+        "mimeType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "timestamp": {"type": "string", "format": "date-time"},
+            "short_term": {
+              "type": "object",
+              "properties": {
+                "count": {"type": "integer"},
+                "items": {"type": "array"},
+                "capacity_percent": {"type": "number"}
+              }
+            },
+            "medium_term": {
+              "type": "object",
+              "properties": {
+                "count": {"type": "integer"},
+                "embeddings_size_mb": {"type": "number"},
+                "last_compaction": {"type": "string"}
+              }
+            },
+            "long_term": {
+              "type": "object",
+              "properties": {
+                "count": {"type": "integer"},
+                "total_size_mb": {"type": "number"},
+                "fragments": {"type": "integer"}
+              }
+            },
+            "free_energy": {
+              "type": "object",
+              "properties": {
+                "current": {"type": "number"},
+                "trend": {"type": "string"},
+                "optimization_cycle": {"type": "integer"}
+              }
+            }
+          }
+        }
+      },
+
+      "free_energy_metrics": {
+        "uri": "bayesian://metrics/free-energy",
+        "name": "自由能指标",
+        "description": "自由能原理相关的实时指标和历史趋势",
+        "mimeType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "current_state": {
+              "type": "object",
+              "properties": {
+                "free_energy_value": {"type": "number"},
+                "surprise_level": {"type": "number"},
+                "entropy": {"type": "number"}
+              }
+            },
+            "history_24h": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "timestamp": {"type": "string"},
+                  "value": {"type": "number"}
+                }
+              }
+            },
+            "optimization_events": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "timestamp": {"type": "string"},
+                  "action": {"type": "string"},
+                  "energy_reduction": {"type": "number"}
+                }
+              }
+            }
+          }
+        }
+      },
+
+      "reasoning_history": {
+        "uri": "bayesian://reasoning/history",
+        "name": "推理历史",
+        "description": "最近的推理链路历史，包含置信度传播轨迹",
+        "mimeType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "recent_chains": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "chain_id": {"type": "string"},
+                  "goal": {"type": "string"},
+                  "steps_count": {"type": "integer"},
+                  "avg_confidence": {"type": "number"},
+                  "completed_at": {"type": "string"}
+                }
+              }
+            },
+            "statistics": {
+              "type": "object",
+              "properties": {
+                "total_chains": {"type": "integer"},
+                "success_rate": {"type": "number"},
+                "avg_length": {"type": "number"}
+              }
+            }
+          }
+        }
+      },
+
+      "knowledge_graph_state": {
+        "uri": "bayesian://knowledge/graph",
+        "name": "知识图谱状态",
+        "description": "当前知识图谱的节点和关系统计",
+        "mimeType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "nodes": {"type": "integer"},
+            "edges": {"type": "integer"},
+            "categories": {
+              "type": "object",
+              "additionalProperties": {"type": "integer"}
+            },
+            "recent_additions": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        }
+      },
+
+      "cognitive_state": {
+        "uri": "bayesian://cognition/state",
+        "name": "认知状态",
+        "description": "当前认知引擎的状态，包括System1/System2切换、注意力分配等",
+        "mimeType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "active_mode": {
+              "type": "string",
+              "enum": ["system1_fast", "system2_deliberate", "hybrid"]
+            },
+            "attention_allocation": {
+              "type": "object",
+              "properties": {
+                "short_term": {"type": "number"},
+                "medium_term": {"type": "number"},
+                "long_term": {"type": "number"}
+              }
+            },
+            "reasoning_depth": {"type": "integer"},
+            "last_optimization": {"type": "string"}
+          }
+        }
+      }
+    }
+  },
+
+  "prompts": {
+    "$defs": {
+      "code_review": {
+        "name": "code_review",
+        "description": "使用贝叶斯推理进行深度代码审查",
+        "arguments": [
+          {"name": "code", "required": true, "description": "待审查代码"},
+          {"name": "focus_areas", "required": false, "description": "重点关注领域"}
+        ]
+      },
+      "debug_assistant": {
+        "name": "debug_assistant",
+        "description": "基于历史bug库的智能调试助手",
+        "arguments": [
+          {"name": "error_message", "required": true},
+          {"name": "stack_trace", "required": false},
+          {"name": "context", "required": false}
+        ]
+      }
+    }
+  },
+
+  "error_codes": {
+    "MEMORY_LAYER_NOT_FOUND": "指定记忆层不存在",
+    "INFERENCE_TIMEOUT": "推理超时",
+    "MODEL_UNAVAILABLE": "LLM模型不可用",
+    "INVALID_CHAIN": "推理链格式错误",
+    "FREE_ENERGY_CRITICAL": "自由能超过临界值",
+    "CONTEXT_OVERFLOW": "上下文溢出"
+  }
+}
