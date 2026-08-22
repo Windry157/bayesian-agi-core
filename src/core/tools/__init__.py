@@ -11,6 +11,7 @@ from .file_edit import FileEditTool
 from .shell import ShellTool
 from .glob_search import GlobTool
 from .grep_search import GrepTool
+from .reason import ReasonTool
 
 __all__ = [
     "ToolProtocol",
@@ -24,6 +25,7 @@ __all__ = [
     "ShellTool",
     "GlobTool",
     "GrepTool",
+    "ReasonTool",
 ]
 
 
@@ -34,3 +36,4 @@ def register_all():
     tool_registry.register(ShellTool())
     tool_registry.register(GlobTool())
     tool_registry.register(GrepTool())
+    tool_registry.register(ReasonTool())

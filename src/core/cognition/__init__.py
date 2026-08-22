@@ -12,6 +12,17 @@ from .system2 import System2
 from .chain_of_thought import ChainOfThought
 from .multi_agent_orchestrator import MultiAgentOrchestrator
 
+# 生产实践验证的 LLM 预算管理（自由能/推理预算控制）
+from .llm_budget import (
+    ReasoningBudget,
+    LLMResult,
+    LLMInvoker,
+    FallbackPolicy,
+    AsyncLLMProvider,
+    SyncLLMProvider,
+    BudgetExhaustedError,
+)
+
 # 尝试导入高级推理模块，如果依赖不可用则跳过
 try:
     from .advanced_reasoning_coordinator import AdvancedReasoningCoordinator, ReasoningStrategy
@@ -26,6 +37,13 @@ try:
         "System2",
         "ChainOfThought",
         "MultiAgentOrchestrator",
+        "ReasoningBudget",
+        "LLMResult",
+        "LLMInvoker",
+        "FallbackPolicy",
+        "AsyncLLMProvider",
+        "SyncLLMProvider",
+        "BudgetExhaustedError",
         "AdvancedReasoningCoordinator",
         "ReasoningStrategy",
         "CausalReasoningEngine",
@@ -49,5 +67,12 @@ except ImportError as e:
         "System1",
         "System2",
         "ChainOfThought",
-        "MultiAgentOrchestrator"
+        "MultiAgentOrchestrator",
+        "ReasoningBudget",
+        "LLMResult",
+        "LLMInvoker",
+        "FallbackPolicy",
+        "AsyncLLMProvider",
+        "SyncLLMProvider",
+        "BudgetExhaustedError",
     ]
