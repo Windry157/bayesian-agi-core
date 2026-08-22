@@ -33,11 +33,11 @@ def verify_token(token: str) -> Optional[dict]:
         from jose import jwt, JWTError
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
-    except JWTError as e:
-        logger.warning(f"JWT verification failed: {e}")
-        return None
     except ImportError:
         logger.warning("python-jose not installed.")
+        return None
+    except JWTError as e:
+        logger.warning(f"JWT verification failed: {e}")
         return None
 
 
