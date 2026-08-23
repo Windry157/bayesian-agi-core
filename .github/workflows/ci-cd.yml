@@ -10,8 +10,6 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
-    env:
-      PYTHONPATH: .
 
     steps:
       - name: Checkout
@@ -30,7 +28,7 @@ jobs:
 
       - name: Run unit tests (excluding integration/e2e)
         run: |
-          pytest tests/ -v --tb=short \
+          python -m pytest tests/ -v --tb=short \
             --ignore=tests/integration \
             --ignore=tests/e2e \
             --ignore=tests_hengshu_prod \
