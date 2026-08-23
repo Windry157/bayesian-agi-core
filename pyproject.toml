@@ -20,7 +20,7 @@ reruns = 2
 reruns_delay = 5
 
 [tool.pytest.ini_options.env]
-PYTHONPATH = "src"
+PYTHONPATH = "."
 TESTING = "true"
 
 ignore = ["tests/integration/", "tests/e2e/"]
